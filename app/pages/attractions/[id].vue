@@ -24,8 +24,8 @@ const attraction = computed(() =>
 
 useHead(() => ({
   title: attraction.value
-    ? `${attraction.value.name} (${attraction.value.province}) — SmartTour`
-    : 'Attraction Not Found — SmartTour',
+    ? `${attraction.value.name} (${attraction.value.province}) — RokMerl`
+    : 'Attraction Not Found — RokMerl',
 }))
 
 const activePhotoIndex = ref(0)
@@ -343,7 +343,7 @@ function submitReview() {
                 </div>
 
                 <p v-if="reviewSubmitted" class="text-xs font-semibold text-emerald-700">
-                  Review published! Thank you for contributing to SmartTour Cambodia.
+                  Review published! Thank you for contributing to RokMerl.
                 </p>
               </form>
 

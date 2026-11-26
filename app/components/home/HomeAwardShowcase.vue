@@ -55,7 +55,7 @@ function toggleLike(id: string) {
               Globally Acclaimed Heritage &amp; Award-Winning Destinations in Cambodia.
             </h2>
             <p class="mt-4 max-w-sm text-sm leading-relaxed text-white/80">
-              SmartTour spotlights Cambodia's most celebrated landmarks, UNESCO treasures, and natural escapes.
+              RokMerl spotlights Cambodia's most celebrated landmarks, UNESCO treasures, and natural escapes.
             </p>
           </div>
 

@@ -15,7 +15,7 @@ import { CAMBODIA_PROVINCES, DESTINATION_CATEGORIES } from '@/data/home'
 import type { AdminBusinessRecord } from '@/types/tourism'
 
 useHead({
-  title: 'Admin Console — SmartTour Cambodia',
+  title: 'Admin Console — RokMerl',
 })
 
 const store = useTourismStore()
@@ -68,7 +68,7 @@ function saveWeights() {
             Administrator Console
           </span>
           <h1 class="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-            SmartTour Cambodia Platform Management
+            RokMerl Platform Management
           </h1>
           <p class="mt-1 text-sm text-white/75">
             Manage attractions, categories, provinces, users, businesses, reports, reviews, and AI recommendations.
@@ -341,7 +341,7 @@ function saveWeights() {
         <UiCardHeader>
           <UiCardTitle>AI Recommendation Scoring Weights</UiCardTitle>
           <UiCardDescription>
-            Configure how SmartTour ranks attractions in the AI Trip Planner
+            Configure how RokMerl ranks attractions in the AI Trip Planner
           </UiCardDescription>
         </UiCardHeader>
         <UiCardContent class="max-w-xl space-y-5">

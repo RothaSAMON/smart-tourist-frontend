@@ -14,7 +14,7 @@ import { CAMBODIA_PROVINCES, INITIAL_SAVED_PLANS, VIBE_TAGS } from '@/data/home'
 import type { ItineraryDay, SavedTripPlan, VibeTag } from '@/types/tourism'
 
 useHead({
-  title: 'AI Trip Planner — SmartTour Cambodia',
+  title: 'AI Trip Planner — RokMerl',
 })
 
 const route = useRoute()

@@ -2,7 +2,7 @@
 import type { SearchFilters } from '@/types/tourism'
 
 useHead({
-  title: 'SmartTour Cambodia — Smart Tourism Recommendations Platform',
+  title: 'RokMerl — Cambodia Smart Tourism Recommendations Platform',
   meta: [
     {
       name: 'description',

@@ -16,7 +16,7 @@ import {
 import type { DestinationCategory, VibeTag } from '@/types/tourism'
 
 useHead({
-  title: 'Explore Cambodia Attractions — SmartTour',
+  title: 'Explore Cambodia Attractions — RokMerl',
 })
 
 const route = useRoute()

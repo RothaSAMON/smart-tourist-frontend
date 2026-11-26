@@ -2,8 +2,12 @@
 import { ref } from 'vue'
 import type { UserRole } from '@/types/tourism'
 
+definePageMeta({
+  alias: ['/register'],
+})
+
 useHead({
-  title: 'Register — SmartTour Cambodia',
+  title: 'Register — RokMerl',
 })
 
 const store = useTourismStore()
@@ -16,7 +20,7 @@ const role = ref<Extract<UserRole, 'tourist' | 'business'>>('tourist')
 async function handleRegister() {
   store.loginMock(
     name.value || 'New Traveler',
-    email.value || 'traveler@smarttour.kh',
+    email.value || 'traveler@rokmerl.kh',
     role.value,
   )
   await navigateTo(role.value === 'business' ? '/business' : '/profile')
@@ -31,7 +35,7 @@ async function handleRegister() {
       <UiCard class="p-2 sm:p-4">
         <UiCardHeader>
           <UiBadge variant="brand" class="w-fit font-semibold">
-            Join SmartTour Cambodia
+            Join RokMerl
           </UiBadge>
           <UiCardTitle class="mt-2 text-2xl">Create your account</UiCardTitle>
           <UiCardDescription>

@@ -13,7 +13,7 @@ import { BUSINESS_TYPES, CAMBODIA_PROVINCES } from '@/data/home'
 import type { BusinessBooking, BusinessType } from '@/types/tourism'
 
 useHead({
-  title: 'Business Owner Portal — SmartTour Cambodia',
+  title: 'Business Owner Portal — RokMerl',
 })
 
 const store = useTourismStore()

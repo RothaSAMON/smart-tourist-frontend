@@ -27,22 +27,22 @@ export interface MockUser {
 
 export function useTourismStore() {
   const attractions = useState<DestinationAttraction[]>(
-    'smarttour-attractions',
+    'rokmerl-attractions',
     () => [...RECOMMENDED_ATTRACTIONS],
   )
-  const favoriteIds = useState<string[]>('smarttour-favorites', () => [
+  const favoriteIds = useState<string[]>('rokmerl-favorites', () => [
     'angkor-wat',
     'koh-rong-samloem',
   ])
-  const reviews = useState<AttractionReview[]>('smarttour-reviews', () => [
+  const reviews = useState<AttractionReview[]>('rokmerl-reviews', () => [
     ...INITIAL_REVIEWS,
   ])
-  const savedPlans = useState<SavedTripPlan[]>('smarttour-saved-plans', () => [
+  const savedPlans = useState<SavedTripPlan[]>('rokmerl-saved-plans', () => [
     ...INITIAL_SAVED_PLANS,
   ])
-  const currentUser = useState<MockUser | null>('smarttour-user', () => ({
+  const currentUser = useState<MockUser | null>('rokmerl-user', () => ({
     name: 'Sophea Kem',
-    email: 'sophea@smarttour.kh',
+    email: 'sophea@rokmerl.kh',
     role: 'tourist',
     avatarUrl:
       'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=96&q=80',
@@ -50,21 +50,21 @@ export function useTourismStore() {
 
   // Business portal mock state
   const businessServices = useState<BusinessService[]>(
-    'smarttour-biz-services',
+    'rokmerl-biz-services',
     () => [...INITIAL_BUSINESS_SERVICES],
   )
   const businessBookings = useState<BusinessBooking[]>(
-    'smarttour-biz-bookings',
+    'rokmerl-biz-bookings',
     () => [...INITIAL_BUSINESS_BOOKINGS],
   )
 
   // Admin console mock state
   const adminBusinesses = useState<AdminBusinessRecord[]>(
-    'smarttour-admin-businesses',
+    'rokmerl-admin-businesses',
     () => [...INITIAL_ADMIN_BUSINESSES],
   )
   const adminReports = useState<AdminReportRecord[]>(
-    'smarttour-admin-reports',
+    'rokmerl-admin-reports',
     () => [...INITIAL_ADMIN_REPORTS],
   )
 
@@ -120,8 +120,8 @@ export function useTourismStore() {
 
   function loginMock(name: string, email: string, role: UserRole) {
     currentUser.value = {
-      name: name.trim() || 'SmartTour Traveler',
-      email: email.trim() || 'traveler@smarttour.kh',
+      name: name.trim() || 'RokMerl Traveler',
+      email: email.trim() || 'traveler@rokmerl.kh',
       role,
       avatarUrl:
         'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=96&q=80',

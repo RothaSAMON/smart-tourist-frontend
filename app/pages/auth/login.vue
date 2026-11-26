@@ -3,13 +3,17 @@ import { ref } from 'vue'
 import { Compass } from '@lucide/vue'
 import type { UserRole } from '@/types/tourism'
 
+definePageMeta({
+  alias: ['/login'],
+})
+
 useHead({
-  title: 'Log in — SmartTour Cambodia',
+  title: 'Log in — RokMerl',
 })
 
 const store = useTourismStore()
 
-const email = ref('sophea@smarttour.kh')
+const email = ref('sophea@rokmerl.kh')
 const password = ref('••••••••')
 const role = ref<UserRole>('tourist')
 
@@ -17,7 +21,7 @@ async function handleLogin() {
   const defaultNames: Record<UserRole, string> = {
     tourist: 'Sophea Kem',
     business: 'Vanna Sok',
-    admin: 'Admin SmartTour',
+    admin: 'Admin RokMerl',
   }
   store.loginMock(defaultNames[role.value], email.value, role.value)
   if (role.value === 'business') {
@@ -45,7 +49,7 @@ async function handleLogin() {
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent p-8 flex flex-col justify-end text-white">
           <span class="inline-flex w-fit items-center gap-2 rounded-full bg-brand-lime px-3 py-1 text-xs font-bold text-brand-lime-foreground">
             <Compass class="size-3.5" />
-            SmartTour Cambodia
+            RokMerl
           </span>
           <h2 class="mt-3 text-2xl font-bold leading-snug">
             Save favorites, build AI itineraries, or manage your local tourism business.
@@ -59,7 +63,7 @@ async function handleLogin() {
           <UiCardHeader>
             <UiCardTitle class="text-2xl">Welcome back</UiCardTitle>
             <UiCardDescription>
-              Sign in to your SmartTour Cambodia account (demo mode — ready for Laravel API)
+              Sign in to your RokMerl account (demo mode — ready for Laravel API)
             </UiCardDescription>
           </UiCardHeader>
 
@@ -112,7 +116,7 @@ async function handleLogin() {
             </form>
 
             <p class="mt-5 text-center text-xs text-muted-foreground">
-              New to SmartTour Cambodia?
+              New to RokMerl?
               <NuxtLink to="/auth/register" class="font-semibold text-foreground underline underline-offset-4">
                 Create an account
               </NuxtLink>

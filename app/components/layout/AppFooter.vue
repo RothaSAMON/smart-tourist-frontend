@@ -16,12 +16,12 @@ const currentYear = new Date().getFullYear()
           <Compass class="size-4" />
         </span>
         <span class="text-base font-semibold tracking-tight text-foreground">
-          SmartTour Cambodia
+          RokMerl
         </span>
       </NuxtLink>
 
       <p class="text-center text-xs text-muted-foreground sm:text-left">
-        Smart Tourism Recommendations Platform &copy; {{ currentYear }}. All rights reserved.
+        RokMerl — Cambodia Tourism Recommendations Platform &copy; {{ currentYear }}. All rights reserved.
       </p>
 
       <div class="flex flex-wrap items-center justify-center gap-5 text-xs font-medium text-muted-foreground">

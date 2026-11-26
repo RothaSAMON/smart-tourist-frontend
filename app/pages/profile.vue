@@ -11,7 +11,7 @@ import {
 } from '@lucide/vue'
 
 useHead({
-  title: 'My Profile & Trips — SmartTour Cambodia',
+  title: 'My Profile & Trips — RokMerl',
 })
 
 const store = useTourismStore()

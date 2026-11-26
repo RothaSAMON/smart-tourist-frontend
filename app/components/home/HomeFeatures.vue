@@ -11,10 +11,10 @@ import { FEATURE_COLLAGE_IMAGES, HERO_AVATARS, UNIQUE_FEATURES } from '@/data/ho
       <!-- Centered Section Header -->
       <div class="mx-auto max-w-2xl text-center">
         <h2 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          What Makes SmartTour Unique
+          What Makes RokMerl Unique
         </h2>
         <p class="mt-3 text-sm text-muted-foreground sm:text-base">
-          SmartTour believes every journey starts with the right destination — offering comfort, connection, and a place to truly belong.
+          RokMerl believes every journey starts with the right destination — offering comfort, connection, and a place to truly belong.
         </p>
       </div>
 

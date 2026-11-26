@@ -56,7 +56,7 @@ function next() {
           What Our Customers Say
         </h2>
         <p class="mt-2.5 text-sm text-brand-lime-foreground/75 sm:text-base">
-          See why our travelers choose SmartTour for unforgettable travel experiences.
+          See why our travelers choose RokMerl for unforgettable travel experiences.
         </p>
 
         <!-- Quote -->

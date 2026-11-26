@@ -603,7 +603,7 @@ export const INITIAL_REVIEWS: AttractionReview[] = [
     rating: 5,
     date: '2 days ago',
     comment:
-      'Arrived at 5:15 AM for sunrise over the reflection pond. The SmartTour crowd tip saved us so much time!',
+      'Arrived at 5:15 AM for sunrise over the reflection pond. The RokMerl crowd tip saved us so much time!',
     photoUrl:
       'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=600&q=80',
     status: 'approved',
@@ -1010,7 +1010,7 @@ export const CUSTOMER_TESTIMONIALS: CustomerTestimonial[] = [
     location: 'Phnom Penh, Cambodia',
     rating: 5,
     quote:
-      'SmartTour helped our family plan a weekend in Kampot and Bokor National Park. Every spot recommended was breathtaking and easy to reach.',
+      'RokMerl helped our family plan a weekend in Kampot and Bokor National Park. Every spot recommended was breathtaking and easy to reach.',
     avatarUrl:
       'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=160&q=80',
   },
@@ -1030,7 +1030,7 @@ export const CUSTOMER_TESTIMONIALS: CustomerTestimonial[] = [
     location: 'Siem Reap, Cambodia',
     rating: 5,
     quote:
-      'Had an amazing experience discovering Cambodia with SmartTour! From Angkor Wat to Koh Rong Samloem, every recommendation was spot on. Highly recommend!',
+      'Had an amazing experience discovering Cambodia with RokMerl! From Angkor Wat to Koh Rong Samloem, every recommendation was spot on. Highly recommend!',
     avatarUrl:
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&q=80',
   },

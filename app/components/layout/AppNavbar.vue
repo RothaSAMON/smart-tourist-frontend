@@ -59,7 +59,7 @@ function isActive(to: string) {
         >
           <Compass class="size-5" />
         </span>
-        <span class="text-lg font-semibold tracking-tight">SmartTour</span>
+        <span class="text-lg font-semibold tracking-tight">RokMerl</span>
       </NuxtLink>
 
       <!-- Desktop Links -->
