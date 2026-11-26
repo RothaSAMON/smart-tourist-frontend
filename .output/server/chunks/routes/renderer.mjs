@@ -148,7 +148,7 @@ const rendererDiagnostics = /* #__PURE__ */ defineDiagnostics({
 // src/runtime/server/renderer/build-files.ts
 const APP_ROOT_OPEN_TAG = `<${appRootTag}${propsToString(appRootAttrs)}>`;
 const APP_ROOT_CLOSE_TAG = `</${appRootTag}>`;
-const getServerEntry = () => import('../virtual/entry.mjs').then(function (n) { return n.g; }).then((r) => r.default || r);
+const getServerEntry = () => import('../virtual/entry.mjs').then(function (n) { return n.j; }).then((r) => r.default || r);
 const getPrecomputedDependencies = () => import('../virtual/precomputed.mjs').then((r) => "default" in r ? r.default : r).then((r) => typeof r === "function" ? r() : r);
 /** Load the build artifacts for a set of renderer options, caching each of them on the returned object. */
 function createBuildFiles(options) {
@@ -379,7 +379,7 @@ async function createInlinedCSSFilter(modules) {
 
 const entryIds = [];
 
-const entryFileName = "CAJ7Wdib.js";
+const entryFileName = "BrYt4mjO.js";
 
 // src/runtime/server/renderer/index.ts
 const HAS_APP_TELEPORTS = !!(appTeleportAttrs.id);

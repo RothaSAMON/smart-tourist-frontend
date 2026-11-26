@@ -798,6 +798,25 @@ function toArray(value) {
 }
 // virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Froute-rules.mjs
 var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froute_rules_default = () => ({});
+// node_modules/nuxt/dist/app/components/vfor.js
+/**
+* Upper bound on `v-for` iterations expanded server-side in a server component or island.
+* Island props are attacker-controllable, so a large numeric `v-for` source is a
+* memory-amplification vector; this caps it.
+*
+* @internal
+*/
+var MAX_VFOR_LENGTH = 1e4;
+/**
+* Clamp a numeric `v-for` source before iteration. Only numbers are bounded (the
+* amplification vector); other sources are returned unchanged.
+*
+* @internal
+*/
+function vforBound(source) {
+	if (typeof source !== "number" || source <= 1e4) return source;
+	return MAX_VFOR_LENGTH;
+}
 // node_modules/nuxt/dist/app/components/utils.js
 var ROUTE_KEY_PARENTHESES_RE = /(:\w+)\([^)]+\)/g;
 var ROUTE_KEY_SYMBOLS_RE = /(:\w+)[?+*]/g;
@@ -926,11 +945,53 @@ var globalMiddleware = [middleware$1, /* @__PURE__ */ defineNuxtRouteMiddleware(
 })];
 var namedMiddleware = {};
 // virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Froutes.mjs
-var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default = [{
-	name: "index",
-	path: "/",
-	component: () => import('../build/pages-By0o6_2U.mjs')
-}];
+var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default = [
+	{
+		name: "auth-login",
+		path: "/auth/login",
+		component: () => import('../build/login-BSveB6uZ.mjs')
+	},
+	{
+		name: "auth-register",
+		path: "/auth/register",
+		component: () => import('../build/register-B2YwbFh5.mjs')
+	},
+	{
+		name: "attractions-id",
+		path: "/attractions/:id()",
+		component: () => import('../build/_id_-CF2q54pq.mjs')
+	},
+	{
+		name: "admin",
+		path: "/admin",
+		component: () => import('../build/admin-RFprkXrU.mjs')
+	},
+	{
+		name: "business",
+		path: "/business",
+		component: () => import('../build/business-DXNK0EZW.mjs')
+	},
+	{
+		name: "explore",
+		path: "/explore",
+		component: () => import('../build/explore-DaZko3Ma.mjs')
+	},
+	{
+		name: "planner",
+		path: "/planner",
+		component: () => import('../build/planner-CYpeyMU0.mjs')
+	},
+	{
+		name: "profile",
+		path: "/profile",
+		component: () => import('../build/profile-CZAvz9ur.mjs')
+	},
+	{
+		name: "index",
+		path: "/",
+		component: () => import('../build/pages-B1FhnqUa.mjs')
+	}
+];
 // node_modules/nuxt/dist/pages/runtime/plugins/router.js
 var plugin$1 = /* @__PURE__ */ defineNuxtPlugin({
 	name: "nuxt:router",
@@ -1178,6 +1239,15 @@ function useHead(input, options = {}) {
 		...options
 	});
 }
+// node_modules/nuxt/dist/app/diagnostics/state.js
+/**
+* E7xxx
+* Payload / state / cookie runtime diagnostics.
+*/
+var stateDiagnostics = /* #__PURE__ */ defineProdDiagnostics({
+	docsBase,
+	reporters: prodReporters
+});
 // node_modules/nuxt/dist/app/composables/payload.js
 /**
 * This is an experimental function for configuring passing rich data from server -> client.
@@ -1326,8 +1396,8 @@ var _sfc_main$1 = {
 		const statusText = _error.statusMessage ?? (is404 ? "Page Not Found" : "Internal Server Error");
 		const description = _error.message || _error.toString();
 		const stack = void 0;
-		const _Error404 = defineAsyncComponent(() => import('../build/error-404-ChV0cRpA.mjs'));
-		const _Error = defineAsyncComponent(() => import('../build/error-500-Fs4-KrGC.mjs'));
+		const _Error404 = defineAsyncComponent(() => import('../build/error-404-B_JlzWin.mjs'));
+		const _Error = defineAsyncComponent(() => import('../build/error-500-C9lLv-V6.mjs'));
 		const ErrorTemplate = is404 ? _Error404 : _Error;
 		return (_ctx, _push, _parent, _attrs) => {
 			_push(ssrRenderComponent(unref(ErrorTemplate), mergeProps({
@@ -1426,5 +1496,5 @@ const entry = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 	default: entry_default
 }, Symbol.toStringTag, { value: 'Module' }));
 
-export { _plugin_vue_export_helper_default as _, useRouter as a, isRootedPath as b, useRuntimeConfig as c, useNuxtApp as d, encodeRoutePath as e, nuxtLinkDefaults as f, entry as g, isAbsoluteHref as i, navigateTo as n, resolveRouteObject as r, sanitizeAnchorHref as s, useHead as u };
+export { _plugin_vue_export_helper_default as _, useRoute$1 as a, useNuxtApp as b, useRouter as c, sanitizeAnchorHref as d, encodeRoutePath as e, isRootedPath as f, useRuntimeConfig as g, nuxtLinkDefaults as h, isAbsoluteHref as i, entry as j, navigateTo as n, resolveRouteObject as r, stateDiagnostics as s, tryUseNuxtApp as t, useHead as u, vforBound as v };
 //# sourceMappingURL=entry.mjs.map
