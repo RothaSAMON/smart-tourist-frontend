@@ -25,19 +25,26 @@ import type {
   ApiPaginationMeta,
   AttractionMutationPayload,
 } from '@/types/attraction-api'
-import type { AdminBusinessRecord } from '@/types/tourism'
+import type { ApiBusiness, BusinessMutationPayload } from '@/types/business-api'
 
 useHead({
   title: 'Admin Console — RokMerl',
 })
 
 const store = useTourismStore()
+const { user: authUser } = useAuth()
 const {
   fetchAttractions,
   createAttraction,
   updateAttraction,
   deleteAttraction,
 } = useAttractionsApi()
+const {
+  fetchBusinesses,
+  createBusiness,
+  updateBusiness,
+  deleteBusiness,
+} = useBusinessesApi()
 
 const activeTab = ref<
   'attractions' | 'businesses' | 'taxonomy' | 'reports' | 'recommendations'
@@ -59,6 +66,23 @@ const deletingTarget = ref<ApiAttraction | null>(null)
 const deleteDialogOpen = ref(false)
 const isDeletingAttraction = ref(false)
 const actionBanner = ref('')
+
+// Live Businesses CRUD State
+const apiBusinesses = ref<ApiBusiness[]>([])
+const bizPaginationMeta = ref<ApiPaginationMeta | null>(null)
+const bizCurrentPage = ref(1)
+const isLoadingBusinesses = ref(true)
+const businessesError = ref('')
+
+const bizFormSheetOpen = ref(false)
+const editingBusiness = ref<ApiBusiness | null>(null)
+const isSavingBusiness = ref(false)
+const bizFormError = ref('')
+
+const deletingBizTarget = ref<ApiBusiness | null>(null)
+const deleteBizDialogOpen = ref(false)
+const isDeletingBusiness = ref(false)
+const bizActionBanner = ref('')
 
 const provinceSelectOptions = computed(() => {
   const map = new Map<string, string>([
@@ -116,7 +140,96 @@ async function loadAttractions(page = currentPage.value) {
 
 onMounted(() => {
   loadAttractions(1)
+  loadBusinesses(1)
 })
+
+async function loadBusinesses(page = bizCurrentPage.value) {
+  isLoadingBusinesses.value = true
+  businessesError.value = ''
+  try {
+    const res = await fetchBusinesses(page)
+    apiBusinesses.value = Array.isArray(res?.items) ? res.items : []
+    bizPaginationMeta.value = res?.meta ?? null
+    bizCurrentPage.value = res?.meta?.current_page ?? page
+  } catch (err) {
+    const fetchErr = err as { data?: { message?: string }; message?: string }
+    businessesError.value =
+      fetchErr?.data?.message ||
+      fetchErr?.message ||
+      'Unable to fetch businesses from API.'
+  } finally {
+    isLoadingBusinesses.value = false
+  }
+}
+
+function openCreateBusinessForm() {
+  editingBusiness.value = null
+  bizFormError.value = ''
+  bizFormSheetOpen.value = true
+}
+
+function openEditBusinessForm(item: ApiBusiness) {
+  editingBusiness.value = item
+  bizFormError.value = ''
+  bizFormSheetOpen.value = true
+}
+
+function openDeleteBusinessDialog(item: ApiBusiness) {
+  deletingBizTarget.value = item
+  deleteBizDialogOpen.value = true
+}
+
+async function handleSaveBusiness(payload: BusinessMutationPayload) {
+  if (isSavingBusiness.value) return
+  isSavingBusiness.value = true
+  bizFormError.value = ''
+  try {
+    if (editingBusiness.value) {
+      await updateBusiness(editingBusiness.value.id, payload)
+      bizActionBanner.value = `Updated "${payload.name}" successfully.`
+    } else {
+      await createBusiness(payload)
+      bizActionBanner.value = `Created "${payload.name}" successfully.`
+    }
+    bizFormSheetOpen.value = false
+    await loadBusinesses(bizCurrentPage.value)
+    setTimeout(() => {
+      bizActionBanner.value = ''
+    }, 3500)
+  } catch (err) {
+    const fetchErr = err as { data?: { message?: string }; message?: string }
+    bizFormError.value =
+      fetchErr?.data?.message ||
+      fetchErr?.message ||
+      'Failed to save business.'
+  } finally {
+    isSavingBusiness.value = false
+  }
+}
+
+async function handleConfirmDeleteBusiness() {
+  if (!deletingBizTarget.value || isDeletingBusiness.value) return
+  isDeletingBusiness.value = true
+  try {
+    const targetName = deletingBizTarget.value.name
+    await deleteBusiness(deletingBizTarget.value.id)
+    deleteBizDialogOpen.value = false
+    deletingBizTarget.value = null
+    bizActionBanner.value = `Deleted "${targetName}" successfully.`
+    await loadBusinesses(bizCurrentPage.value)
+    setTimeout(() => {
+      bizActionBanner.value = ''
+    }, 3500)
+  } catch (err) {
+    const fetchErr = err as { data?: { message?: string }; message?: string }
+    businessesError.value =
+      fetchErr?.data?.message ||
+      fetchErr?.message ||
+      'Failed to delete business.'
+  } finally {
+    isDeletingBusiness.value = false
+  }
+}
 
 function openCreateForm() {
   editingAttraction.value = null
@@ -197,12 +310,6 @@ const openReportsCount = computed(
   () => store.adminReports.value.filter((r) => r.status === 'open').length,
 )
 
-function setBusinessStatus(id: string, status: AdminBusinessRecord['status']) {
-  store.adminBusinesses.value = store.adminBusinesses.value.map((b) =>
-    b.id === id ? { ...b, status } : b,
-  )
-}
-
 function resolveReport(id: string) {
   store.adminReports.value = store.adminReports.value.map((r) =>
     r.id === id ? { ...r, status: 'resolved' } : r,
@@ -273,12 +380,12 @@ function saveWeights() {
           <UiCardContent class="flex items-center justify-between">
             <div>
               <p class="text-xs font-medium text-muted-foreground">Partner Businesses</p>
-              <p class="mt-1 text-2xl font-bold">{{ store.adminBusinesses.value.length }}</p>
-              <p class="text-xs text-amber-600">
-                {{ store.adminBusinesses.value.filter((b) => b.status === 'pending').length }} pending approval
+              <p class="mt-1 text-2xl font-bold">
+                {{ bizPaginationMeta?.total ?? apiBusinesses.length }}
               </p>
+              <p class="text-xs text-muted-foreground">Live from /businesses API</p>
             </div>
-            <Building2 class="size-8 text-neutral-700" />
+            <Building2 class="size-8 text-neutral-700 dark:text-neutral-300" />
           </UiCardContent>
         </UiCard>
 
@@ -536,63 +643,203 @@ function saveWeights() {
           </UiAlertDialog>
         </UiTabsContent>
 
-        <!-- Tab 2: Businesses -->
+        <!-- Tab 2: Businesses (Live CRUD) -->
         <UiTabsContent value="businesses">
           <UiCard>
             <UiCardHeader>
-              <UiCardTitle>Business Approvals &amp; Directory</UiCardTitle>
-              <UiCardDescription>
-                Approve new local businesses or manage active partners
-              </UiCardDescription>
-            </UiCardHeader>
-            <UiCardContent class="space-y-3">
-              <div
-                v-for="biz in store.adminBusinesses.value"
-                :key="biz.id"
-                class="flex flex-col justify-between gap-3 rounded-2xl border border-border/80 p-4 sm:flex-row sm:items-center"
-              >
+              <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div class="flex items-center gap-2">
-                    <p class="text-sm font-semibold">{{ biz.name }}</p>
-                    <UiBadge
-                      :variant="
-                        biz.status === 'active'
-                          ? 'brand'
-                          : biz.status === 'pending'
-                            ? 'secondary'
-                            : 'outline'
-                      "
-                    >
-                      {{ biz.status }}
-                    </UiBadge>
-                  </div>
-                  <p class="mt-0.5 text-xs text-muted-foreground">
-                    Owner: {{ biz.owner }} · {{ biz.type }} · {{ biz.province }} ·
-                    {{ biz.monthlyViews.toLocaleString() }} views/mo
-                  </p>
+                  <UiCardTitle>Businesses Directory</UiCardTitle>
+                  <UiCardDescription>
+                    Create, update, or delete Cambodian businesses via /businesses API
+                  </UiCardDescription>
                 </div>
-
                 <div class="flex items-center gap-2">
                   <UiButton
-                    v-if="biz.status !== 'active'"
-                    variant="brand"
-                    size="sm"
-                    @click="setBusinessStatus(biz.id, 'active')"
-                  >
-                    Approve
-                  </UiButton>
-                  <UiButton
-                    v-if="biz.status === 'active'"
                     variant="outline"
                     size="sm"
-                    @click="setBusinessStatus(biz.id, 'suspended')"
+                    :disabled="isLoadingBusinesses"
+                    @click="loadBusinesses(bizCurrentPage)"
                   >
-                    Suspend
+                    <RefreshCw
+                      class="size-3.5"
+                      :class="isLoadingBusinesses ? 'animate-spin' : ''"
+                    />
+                    Refresh
+                  </UiButton>
+                  <UiButton
+                    variant="brand"
+                    size="sm"
+                    class="font-semibold"
+                    @click="openCreateBusinessForm"
+                  >
+                    <Plus class="size-4" />
+                    Add Business
                   </UiButton>
                 </div>
               </div>
+            </UiCardHeader>
+            <UiCardContent class="space-y-3">
+              <div
+                v-if="bizActionBanner"
+                class="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-semibold text-emerald-800"
+              >
+                <CheckCircle2 class="size-4 shrink-0" />
+                <span>{{ bizActionBanner }}</span>
+              </div>
+
+              <div
+                v-if="businessesError"
+                class="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-xs font-medium text-destructive"
+              >
+                <span class="inline-flex items-center gap-2">
+                  <AlertCircle class="size-4 shrink-0" />
+                  {{ businessesError }}
+                </span>
+                <UiButton
+                  variant="outline"
+                  size="sm"
+                  @click="loadBusinesses(bizCurrentPage)"
+                >
+                  Retry
+                </UiButton>
+              </div>
+
+              <div v-else-if="isLoadingBusinesses" class="space-y-3">
+                <div
+                  v-for="n in 4"
+                  :key="n"
+                  class="h-20 animate-pulse rounded-2xl bg-muted"
+                />
+              </div>
+
+              <template v-else-if="apiBusinesses.length > 0">
+                <div
+                  v-for="biz in apiBusinesses"
+                  :key="biz.id"
+                  class="flex flex-col justify-between gap-3 rounded-2xl border border-border/80 p-4 sm:flex-row sm:items-center"
+                >
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <p class="truncate text-sm font-semibold">{{ biz.name }}</p>
+                      <UiBadge variant="brand">{{ biz.category }}</UiBadge>
+                    </div>
+                    <p class="mt-0.5 text-xs text-muted-foreground">
+                      {{ biz.address || 'Cambodia' }}
+                      <span v-if="biz.phone"> · {{ biz.phone }}</span>
+                    </p>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-2">
+                    <NuxtLink :to="`/businesses/${biz.id}`">
+                      <UiButton variant="outline" size="sm">View</UiButton>
+                    </NuxtLink>
+                    <UiButton
+                      variant="outline"
+                      size="sm"
+                      @click="openEditBusinessForm(biz)"
+                    >
+                      <Pencil class="size-3.5" />
+                      Edit
+                    </UiButton>
+                    <UiButton
+                      variant="outline"
+                      size="sm"
+                      class="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      @click="openDeleteBusinessDialog(biz)"
+                    >
+                      <Trash2 class="size-3.5" />
+                      Delete
+                    </UiButton>
+                  </div>
+                </div>
+
+                <div
+                  v-if="bizPaginationMeta && bizPaginationMeta.last_page > 1"
+                  class="flex items-center justify-between border-t border-border/60 pt-4"
+                >
+                  <p class="text-xs text-muted-foreground">
+                    Page {{ bizPaginationMeta.current_page }} of {{ bizPaginationMeta.last_page }}
+                    ({{ bizPaginationMeta.total }} total)
+                  </p>
+                  <div class="flex items-center gap-2">
+                    <UiButton
+                      variant="outline"
+                      size="sm"
+                      :disabled="bizCurrentPage <= 1"
+                      @click="loadBusinesses(bizCurrentPage - 1)"
+                    >
+                      <ChevronLeft class="size-4" />
+                      Previous
+                    </UiButton>
+                    <UiButton
+                      variant="outline"
+                      size="sm"
+                      :disabled="bizCurrentPage >= bizPaginationMeta.last_page"
+                      @click="loadBusinesses(bizCurrentPage + 1)"
+                    >
+                      Next
+                      <ChevronRight class="size-4" />
+                    </UiButton>
+                  </div>
+                </div>
+              </template>
+
+              <div
+                v-else
+                class="rounded-2xl border border-dashed border-border py-12 text-center"
+              >
+                <p class="text-sm font-semibold">No businesses found</p>
+                <UiButton
+                  variant="brand"
+                  size="sm"
+                  class="mt-3"
+                  @click="openCreateBusinessForm"
+                >
+                  <Plus class="size-4" />
+                  Add First Business
+                </UiButton>
+              </div>
             </UiCardContent>
           </UiCard>
+
+          <BusinessFormSheet
+            v-model:open="bizFormSheetOpen"
+            :editing-business="editingBusiness"
+            :default-user-id="authUser?.id ?? 1"
+            :is-submitting="isSavingBusiness"
+            :error-message="bizFormError"
+            @submit="handleSaveBusiness"
+          />
+
+          <UiAlertDialog v-model:open="deleteBizDialogOpen">
+            <UiAlertDialogContent>
+              <UiAlertDialogHeader>
+                <UiAlertDialogTitle>Delete business?</UiAlertDialogTitle>
+                <UiAlertDialogDescription>
+                  This will permanently delete
+                  <span class="font-semibold text-foreground">
+                    {{ deletingBizTarget?.name }}
+                  </span>
+                  via DELETE /businesses/{{ deletingBizTarget?.id }}. This action cannot be undone.
+                </UiAlertDialogDescription>
+              </UiAlertDialogHeader>
+              <UiAlertDialogFooter>
+                <UiAlertDialogCancel :disabled="isDeletingBusiness">
+                  Cancel
+                </UiAlertDialogCancel>
+                <UiButton
+                  variant="default"
+                  class="bg-destructive text-white hover:bg-destructive/90"
+                  :disabled="isDeletingBusiness"
+                  @click="handleConfirmDeleteBusiness"
+                >
+                  <Loader2 v-if="isDeletingBusiness" class="size-4 animate-spin" />
+                  {{ isDeletingBusiness ? 'Deleting...' : 'Delete' }}
+                </UiButton>
+              </UiAlertDialogFooter>
+            </UiAlertDialogContent>
+          </UiAlertDialog>
         </UiTabsContent>
 
         <!-- Tab 3: Provinces & Categories -->
