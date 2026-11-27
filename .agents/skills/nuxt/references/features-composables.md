@@ -124,7 +124,7 @@ export function useAuth() {
   }
 
   async function logout() {
-    await $fetch('/api/auth/logout', { method: 'POST' })
+    await $fetch('/api/logout', { method: 'GET' })
     user.value = null
   }
 

@@ -144,9 +144,9 @@ export function useAuth() {
   async function logout(): Promise<void> {
     try {
       if (accessToken.value) {
-        await $fetch(`${getApiBase()}/auth/logout`, {
-          method: 'POST',
-          headers: getAuthHeaders(),
+        await $fetch(`${getApiBase()}/logout`, {
+          method: 'GET',
+          headers: getAuthHeaders(),  
         })
       }
     } finally {
