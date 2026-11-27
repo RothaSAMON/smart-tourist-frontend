@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import {
   Building2,
   Compass,
@@ -32,6 +32,20 @@ const navLinks = [
 ]
 
 const sidebarOpen = ref(false)
+const isScrolled = ref(false)
+
+function handleScroll() {
+  isScrolled.value = window.scrollY > 120
+}
+
+onMounted(() => {
+  handleScroll()
+  window.addEventListener('scroll', handleScroll, { passive: true })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
 
 function isActive(to: string) {
   if (to === '/') return route.path === '/'
@@ -279,5 +293,27 @@ function isActive(to: string) {
         </UiSheet>
       </div>
     </nav>
+
+    <!-- Floating Mobile Menu Button when scrolling past transparent hero -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0 scale-90 -translate-y-2"
+        enter-to-class="opacity-100 scale-100 translate-y-0"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100 scale-100 translate-y-0"
+        leave-to-class="opacity-0 scale-90 -translate-y-2"
+      >
+        <button
+          v-if="props.variant === 'transparent' && isScrolled && !sidebarOpen"
+          type="button"
+          class="fixed top-4 right-4 z-40 flex size-11 items-center justify-center rounded-full border border-border bg-background/95 text-foreground shadow-lg backdrop-blur-md transition-transform active:scale-95 md:hidden"
+          aria-label="Open navigation sidebar"
+          @click="sidebarOpen = true"
+        >
+          <Menu class="size-5" />
+        </button>
+      </Transition>
+    </Teleport>
   </header>
 </template>
