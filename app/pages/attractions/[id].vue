@@ -28,7 +28,6 @@ useHead(() => ({
     : 'Attraction Not Found — RokMerl',
 }))
 
-const activePhotoIndex = ref(0)
 const showVideo = ref(false)
 const nearbyTab = ref<'restaurants' | 'hotels'>('restaurants')
 
@@ -42,12 +41,11 @@ const attractionReviews = computed(() =>
   attraction.value ? store.getReviewsForAttraction(attraction.value.id) : [],
 )
 
-const activeImage = computed(() => {
-  if (!attraction.value) return ''
-  return (
-    attraction.value.gallery[activePhotoIndex.value] ??
-    attraction.value.imageUrl
-  )
+const galleryImages = computed(() => {
+  if (!attraction.value) return []
+  return attraction.value.gallery.length > 0
+    ? attraction.value.gallery
+    : [attraction.value.imageUrl]
 })
 
 function submitReview() {
@@ -140,56 +138,90 @@ function submitReview() {
         </div>
       </div>
 
-      <!-- Media Gallery + Video Preview -->
-      <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div class="relative overflow-hidden rounded-3xl bg-neutral-900 lg:col-span-9">
+      <!-- Media Gallery (shadcn-vue Carousel) + Video Preview -->
+      <div class="mt-6">
+        <div
+          v-if="showVideo"
+          class="relative overflow-hidden rounded-3xl bg-neutral-900"
+        >
           <iframe
-            v-if="showVideo"
             :src="attraction.videoPreviewUrl"
             :title="`${attraction.name} video tour`"
-            class="h-[340px] w-full border-0 sm:h-[460px]"
+            class="h-[340px] w-full border-0 sm:h-[480px]"
             allowfullscreen
           />
-          <img
-            v-else
-            :src="activeImage"
-            :alt="attraction.name"
-            class="h-[340px] w-full object-cover sm:h-[460px]"
-          />
-
-          <button
-            type="button"
-            class="absolute right-4 bottom-4 inline-flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-xs font-semibold text-neutral-900 shadow-lg transition-transform hover:scale-105"
-            @click="showVideo = !showVideo"
+          <UiButton
+            variant="outline"
+            size="sm"
+            class="absolute right-4 bottom-4 rounded-full bg-white/95 text-xs font-semibold text-neutral-900 shadow-lg hover:bg-white"
+            @click="showVideo = false"
           >
-            <Play class="size-3.5 fill-neutral-900" />
-            {{ showVideo ? 'View Photos' : 'Watch Video Preview' }}
-          </button>
+            Back to Photo Carousel
+          </UiButton>
         </div>
 
-        <div class="grid grid-cols-3 gap-3 lg:col-span-3 lg:grid-cols-1">
-          <button
-            v-for="(img, idx) in attraction.gallery"
-            :key="img"
-            type="button"
-            class="overflow-hidden rounded-2xl border-2 transition-all"
-            :class="
-              !showVideo && activePhotoIndex === idx
-                ? 'border-brand-lime ring-2 ring-brand-lime/60'
-                : 'border-transparent opacity-80 hover:opacity-100'
-            "
-            @click="
-              activePhotoIndex = idx;
-              showVideo = false
-            "
+        <UiCarousel v-else v-slot="{ currentIndex, scrollTo }" :loop="true">
+          <div class="relative overflow-hidden rounded-3xl bg-neutral-900 shadow-sm">
+            <UiCarouselContent>
+              <UiCarouselItem
+                v-for="(img, idx) in galleryImages"
+                :key="`${img}-${idx}`"
+              >
+                <img
+                  :src="img"
+                  :alt="`${attraction.name} photo ${idx + 1}`"
+                  class="h-[340px] w-full object-cover sm:h-[480px]"
+                />
+              </UiCarouselItem>
+            </UiCarouselContent>
+
+            <UiCarouselPrevious v-if="galleryImages.length > 1" />
+            <UiCarouselNext v-if="galleryImages.length > 1" />
+
+            <!-- Slide Counter Pill -->
+            <span
+              v-if="galleryImages.length > 1"
+              class="absolute bottom-4 left-4 rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md"
+            >
+              {{ currentIndex + 1 }} / {{ galleryImages.length }}
+            </span>
+
+            <!-- Video Preview Toggle -->
+            <button
+              type="button"
+              class="absolute right-4 bottom-4 inline-flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-xs font-semibold text-neutral-900 shadow-lg transition-transform hover:scale-105"
+              @click="showVideo = true"
+            >
+              <Play class="size-3.5 fill-neutral-900" />
+              Watch Video Preview
+            </button>
+          </div>
+
+          <!-- Synced Thumbnail Strip -->
+          <div
+            v-if="galleryImages.length > 1"
+            class="mt-3 flex flex-wrap items-center gap-2.5"
           >
-            <img
-              :src="img"
-              :alt="`${attraction.name} photo ${idx + 1}`"
-              class="h-24 w-full object-cover lg:h-[144px]"
-            />
-          </button>
-        </div>
+            <button
+              v-for="(img, idx) in galleryImages"
+              :key="`thumb-${idx}`"
+              type="button"
+              class="overflow-hidden rounded-xl border-2 transition-all"
+              :class="
+                currentIndex === idx
+                  ? 'border-brand-lime ring-2 ring-brand-lime/60'
+                  : 'border-transparent opacity-70 hover:opacity-100'
+              "
+              @click="scrollTo(idx)"
+            >
+              <img
+                :src="img"
+                :alt="`${attraction.name} thumbnail ${idx + 1}`"
+                class="h-16 w-24 object-cover sm:h-20 sm:w-28"
+              />
+            </button>
+          </div>
+        </UiCarousel>
       </div>
 
       <!-- Main Details & Sidebar -->
@@ -223,34 +255,18 @@ function submitReview() {
                     Curated Cambodian restaurants and stays close to {{ attraction.name }}
                   </UiCardDescription>
                 </div>
-                <div class="inline-flex rounded-full border border-border bg-muted/50 p-1">
-                  <button
-                    type="button"
-                    class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors"
-                    :class="
-                      nearbyTab === 'restaurants'
-                        ? 'bg-brand-lime text-brand-lime-foreground'
-                        : 'text-muted-foreground'
-                    "
-                    @click="nearbyTab = 'restaurants'"
-                  >
-                    <Utensils class="size-3.5" />
-                    Restaurants ({{ attraction.nearbyRestaurants.length }})
-                  </button>
-                  <button
-                    type="button"
-                    class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors"
-                    :class="
-                      nearbyTab === 'hotels'
-                        ? 'bg-brand-lime text-brand-lime-foreground'
-                        : 'text-muted-foreground'
-                    "
-                    @click="nearbyTab = 'hotels'"
-                  >
-                    <Hotel class="size-3.5" />
-                    Hotels ({{ attraction.nearbyHotels.length }})
-                  </button>
-                </div>
+                <UiTabs v-model="nearbyTab">
+                  <UiTabsList>
+                    <UiTabsTrigger value="restaurants">
+                      <Utensils class="size-3.5" />
+                      Restaurants ({{ attraction.nearbyRestaurants.length }})
+                    </UiTabsTrigger>
+                    <UiTabsTrigger value="hotels">
+                      <Hotel class="size-3.5" />
+                      Hotels ({{ attraction.nearbyHotels.length }})
+                    </UiTabsTrigger>
+                  </UiTabsList>
+                </UiTabs>
               </div>
             </UiCardHeader>
             <UiCardContent>

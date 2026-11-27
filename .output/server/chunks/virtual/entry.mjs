@@ -961,7 +961,7 @@ var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default = [
 	{
 		name: "attractions-id",
 		path: "/attractions/:id()",
-		component: () => import('../build/_id_-BPkAvszO.mjs')
+		component: () => import('../build/_id_-x1AdNJxA.mjs')
 	},
 	{
 		name: "admin",
