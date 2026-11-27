@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import {
   Calendar,
   Heart,
+  Loader2,
   LogOut,
   Mail,
   MapPin,
@@ -21,6 +22,8 @@ const store = useTourismStore()
 const { user: authUser, isAuthenticated, fetchMe, logout } = useAuth()
 const activeTab = ref<'favorites' | 'plans' | 'reviews'>('favorites')
 const isLoadingProfile = ref(false)
+const logoutDialogOpen = ref(false)
+const isLoggingOut = ref(false)
 
 const profile = computed(() => {
   if (authUser.value) {
@@ -66,9 +69,16 @@ const recommendedForYou = computed(() =>
     .slice(0, 3),
 )
 
-async function handleLogout() {
-  logout()
-  await navigateTo('/auth/login')
+async function handleConfirmLogout() {
+  if (isLoggingOut.value) return
+  isLoggingOut.value = true
+  try {
+    await logout()
+    logoutDialogOpen.value = false
+    await navigateTo('/auth/login')
+  } finally {
+    isLoggingOut.value = false
+  }
 }
 </script>
 
@@ -132,15 +142,36 @@ async function handleLogout() {
                 New AI Trip Plan
               </UiButton>
             </NuxtLink>
-            <UiButton
-              v-if="profile"
-              variant="outline"
-              size="sm"
-              @click="handleLogout"
-            >
-              <LogOut class="size-4" />
-              Log out
-            </UiButton>
+            <UiAlertDialog v-if="profile" v-model:open="logoutDialogOpen">
+              <UiAlertDialogTrigger as-child>
+                <UiButton variant="outline" size="sm">
+                  <LogOut class="size-4" />
+                  Log out
+                </UiButton>
+              </UiAlertDialogTrigger>
+              <UiAlertDialogContent>
+                <UiAlertDialogHeader>
+                  <UiAlertDialogTitle>Log out of RokMerl?</UiAlertDialogTitle>
+                  <UiAlertDialogDescription>
+                    You will be signed out of your account <span class="underline">{{ profile.email }}</span> from RokMerl.
+                  </UiAlertDialogDescription>
+                </UiAlertDialogHeader>
+                <UiAlertDialogFooter>
+                  <UiAlertDialogCancel :disabled="isLoggingOut">
+                    Cancel
+                  </UiAlertDialogCancel>
+                  <UiButton
+                    variant="default"
+                    class="bg-destructive text-white hover:bg-destructive/90"
+                    :disabled="isLoggingOut"
+                    @click="handleConfirmLogout"
+                  >
+                    <Loader2 v-if="isLoggingOut" class="size-4 animate-spin" />
+                    {{ isLoggingOut ? 'Logging out...' : 'Log out' }}
+                  </UiButton>
+                </UiAlertDialogFooter>
+              </UiAlertDialogContent>
+            </UiAlertDialog>
             <NuxtLink v-else to="/auth/login">
               <UiButton variant="outline" size="sm">Log in</UiButton>
             </NuxtLink>

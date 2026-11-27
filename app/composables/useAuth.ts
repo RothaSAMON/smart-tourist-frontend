@@ -128,17 +128,30 @@ export function useAuth() {
     } catch (err) {
       const status = (err as { statusCode?: number; status?: number })
       if (status?.statusCode === 401 || status?.status === 401) {
-        logout()
+        clearSession()
       }
       return userCookie.value
     }
   }
 
-  function logout() {
+  function clearSession() {
     accessToken.value = null
     tokenType.value = 'Bearer'
     userCookie.value = null
     store.logoutMock()
+  }
+
+  async function logout(): Promise<void> {
+    try {
+      if (accessToken.value) {
+        await $fetch(`${getApiBase()}/auth/logout`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+        })
+      }
+    } finally {
+      clearSession()
+    }
   }
 
   function resolveRedirectPath(user: AuthUser): string {
