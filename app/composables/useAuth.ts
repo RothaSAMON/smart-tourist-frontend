@@ -1,10 +1,13 @@
 import { computed } from 'vue'
+import { UserType } from '@/enums/role'
 import type {
   ApiErrorPayload,
   AuthUser,
   LoginRequest,
   LoginResponse,
   MeResponse,
+  RegisterRequest,
+  RegisterResponse,
 } from '@/types/auth'
 
 export function useAuth() {
@@ -71,6 +74,42 @@ export function useAuth() {
     return response
   }
 
+  async function register(payload: RegisterRequest): Promise<RegisterResponse> {
+    const response = await $fetch<RegisterResponse>(
+      `${getApiBase()}/auth/register`,
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: {
+          name: payload.name.trim(),
+          email: payload.email.trim(),
+          password: payload.password,
+          password_confirmation: payload.password_confirmation,
+          phone: payload.phone.trim(),
+          user_type: payload.user_type,
+        },
+      },
+    )
+
+    if (!response.success) {
+      throw new Error(response.message || 'Registration failed. Please try again.')
+    }
+
+    if (response.token?.accessToken) {
+      accessToken.value = response.token.accessToken
+      tokenType.value = response.token.tokenType || 'Bearer'
+    }
+    if (response.data) {
+      userCookie.value = response.data
+      store.setAuthUser(response.data)
+    }
+
+    return response
+  }
+
   async function fetchMe(): Promise<AuthUser | null> {
     if (!accessToken.value) return null
 
@@ -106,10 +145,14 @@ export function useAuth() {
     const normalizedType = user.user_type?.toLowerCase()
     const normalizedRoles = (user.roles ?? []).map((r) => r.toLowerCase())
 
-    if (normalizedType === 'admin' || normalizedRoles.includes('admin')) {
+    if (
+      normalizedType === UserType.ADMIN ||
+      normalizedRoles.includes('admin')
+    ) {
       return '/admin'
     }
     if (
+      normalizedType === UserType.BUSINESS_OWNER ||
       normalizedType === 'business' ||
       normalizedRoles.includes('business') ||
       normalizedRoles.includes('business owner')
@@ -155,6 +198,7 @@ export function useAuth() {
     isAuthenticated,
     getAuthHeaders,
     login,
+    register,
     fetchMe,
     logout,
     resolveRedirectPath,

@@ -130,8 +130,10 @@ export function useTourismStore() {
     if (normalizedType === 'admin' || normalizedRoles.includes('admin')) {
       role = 'admin'
     } else if (
+      normalizedType === 'business_owner' ||
       normalizedType === 'business' ||
-      normalizedRoles.includes('business')
+      normalizedRoles.includes('business') ||
+      normalizedRoles.includes('business owner')
     ) {
       role = 'business'
     }

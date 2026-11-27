@@ -951,48 +951,48 @@ var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default = [
 		name: "auth-login",
 		path: "/auth/login",
 		alias: ["/login"],
-		component: () => import('../build/login-D_Es-31R.mjs')
+		component: () => import('../build/login-DA1zDpyi.mjs')
 	},
 	{
 		name: "auth-register",
 		path: "/auth/register",
 		alias: ["/register"],
-		component: () => import('../build/register-g_4Kw2Dx.mjs')
+		component: () => import('../build/register-B4obfIYd.mjs')
 	},
 	{
 		name: "attractions-id",
 		path: "/attractions/:id()",
-		component: () => import('../build/_id_-BnifCw33.mjs')
+		component: () => import('../build/_id_-iatUAM59.mjs')
 	},
 	{
 		name: "admin",
 		path: "/admin",
-		component: () => import('../build/admin-CBeG-4p1.mjs')
+		component: () => import('../build/admin-C8zBKEt9.mjs')
 	},
 	{
 		name: "business",
 		path: "/business",
-		component: () => import('../build/business-h9CLguTi.mjs')
+		component: () => import('../build/business-CboEMEe-.mjs')
 	},
 	{
 		name: "explore",
 		path: "/explore",
-		component: () => import('../build/explore-YILjDQ7i.mjs')
+		component: () => import('../build/explore-BWIZaMmH.mjs')
 	},
 	{
 		name: "planner",
 		path: "/planner",
-		component: () => import('../build/planner-yO3qZikJ.mjs')
+		component: () => import('../build/planner-DCc9Vobs.mjs')
 	},
 	{
 		name: "profile",
 		path: "/profile",
-		component: () => import('../build/profile-CXs1jqsS.mjs')
+		component: () => import('../build/profile-Cmq_e8sx.mjs')
 	},
 	{
 		name: "index",
 		path: "/",
-		component: () => import('../build/pages-n67FApdQ.mjs')
+		component: () => import('../build/pages-qetnaNJU.mjs')
 	}
 ];
 // node_modules/nuxt/dist/pages/runtime/plugins/router.js

@@ -1,3 +1,5 @@
+import type { RegisterUserType } from '@/enums/role'
+
 export interface AuthUser {
   id: number
   name: string
@@ -26,6 +28,15 @@ export interface LoginRequest {
   password: string
 }
 
+export interface RegisterRequest {
+  name: string
+  email: string
+  password: string
+  password_confirmation: string
+  phone: string
+  user_type: RegisterUserType
+}
+
 export interface LoginResponse {
   status: string
   message: string
@@ -33,6 +44,8 @@ export interface LoginResponse {
   token: AuthToken
   success: boolean
 }
+
+export type RegisterResponse = LoginResponse
 
 export interface ApiErrorPayload {
   message?: string
