@@ -379,7 +379,7 @@ async function createInlinedCSSFilter(modules) {
 
 const entryIds = [];
 
-const entryFileName = "NkFt0Eio.js";
+const entryFileName = "DuJXx0a-.js";
 
 // src/runtime/server/renderer/index.ts
 const HAS_APP_TELEPORTS = !!(appTeleportAttrs.id);
