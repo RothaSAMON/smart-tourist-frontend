@@ -85,7 +85,7 @@ const mapEmbedUrl = computed(() => {
           :class="
             activeAttraction?.id === item.id
               ? 'border-transparent bg-brand-lime text-brand-lime-foreground'
-              : 'border-border bg-white text-foreground hover:bg-muted'
+              : 'border-border bg-card text-card-foreground hover:bg-muted'
           "
           @click="emit('select', item.id)"
         >
@@ -97,7 +97,7 @@ const mapEmbedUrl = computed(() => {
 
     <div
       v-if="activeAttraction"
-      class="flex items-center justify-between gap-3 border-t border-border/70 bg-white px-4 py-3"
+      class="flex items-center justify-between gap-3 border-t border-border/70 bg-card px-4 py-3"
     >
       <div class="min-w-0">
         <p class="truncate text-sm font-semibold text-foreground">

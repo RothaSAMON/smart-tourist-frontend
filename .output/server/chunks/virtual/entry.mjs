@@ -1,9 +1,9 @@
 import { defineProdDiagnostics } from 'nostics';
 import { ansiFormatter } from 'nostics/formatters/ansi';
-import { createApp, provide, onErrorCaptured, onServerPrefetch, unref, createVNode, resolveDynamicComponent, shallowReactive, reactive, effectScope, hasInjectionContext, getCurrentInstance, inject, defineAsyncComponent, mergeProps, getCurrentScope, toRef, shallowRef, isReadonly, defineComponent, ref, h, useSSRContext, isRef, isShallow, isReactive, toRaw, isVNode, createCommentVNode, Suspense, Fragment, watchEffect, onScopeDispose, toValue } from 'vue';
-import { e as createError, $ as $fetch, t as joinURL, B as withQuery, C as sanitizeStatusCode, D as parseURL, E as decodePath, F as isScriptProtocol } from '../nitro/nitro.mjs';
+import { createApp, provide, onErrorCaptured, onServerPrefetch, unref, createVNode, resolveDynamicComponent, shallowReactive, reactive, effectScope, hasInjectionContext, getCurrentInstance, inject, defineAsyncComponent, mergeProps, defineComponent, computed, getCurrentScope, toRef, watch, ref, h, isRef, customRef, watchEffect, onScopeDispose, isVNode, createCommentVNode, toValue, shallowRef, isReadonly, Suspense, Fragment, useSSRContext, isShallow, isReactive, toRaw } from 'vue';
+import { e as createError, B as klona, C as getRequestHeader, D as isEqual, E as splitCookiesString, F as getResponseHeader, G as setCookie, H as getCookie, I as deleteCookie, $ as $fetch, t as joinURL, J as withQuery, K as sanitizeStatusCode, L as parseURL, M as decodePath, O as isScriptProtocol } from '../nitro/nitro.mjs';
 import { b as baseURL } from '../routes/renderer.mjs';
-import { createMemoryHistory, createRouter, START_LOCATION, isNavigationFailure, NavigationFailureType, RouterView } from 'vue-router';
+import { RouterView, createMemoryHistory, createRouter, START_LOCATION, isNavigationFailure, NavigationFailureType } from 'vue-router';
 import { walkResolver } from 'unhead/utils';
 import { ssrRenderSuspense, ssrRenderComponent, ssrRenderVNode } from 'vue/server-renderer';
 
@@ -178,6 +178,181 @@ var Hookable = class {
 };
 function createHooks() {
 	return new Hookable();
+}
+
+const COOKIE_MAX_AGE_LIMIT = 3456e4;
+function endIndex(str, min, len) {
+	const index = str.indexOf(";", min);
+	return index === -1 ? len : index;
+}
+function eqIndex(str, min, max) {
+	const index = str.indexOf("=", min);
+	return index < max ? index : -1;
+}
+function valueSlice(str, min, max) {
+	if (min === max) return "";
+	let start = min;
+	let end = max;
+	do {
+		const code = str.charCodeAt(start);
+		if (code !== 32 && code !== 9) break;
+	} while (++start < end);
+	while (end > start) {
+		const code = str.charCodeAt(end - 1);
+		if (code !== 32 && code !== 9) break;
+		end--;
+	}
+	return str.slice(start, end);
+}
+const NullObject = /* @__PURE__ */ (() => {
+	const C = function() {};
+	C.prototype = Object.create(null);
+	return C;
+})();
+function parse(str, options) {
+	const obj = new NullObject();
+	const len = str.length;
+	if (len < 2) return obj;
+	const dec = options?.decode || decode;
+	const allowMultiple = options?.allowMultiple || false;
+	let index = 0;
+	do {
+		const eqIdx = eqIndex(str, index, len);
+		if (eqIdx === -1) break;
+		const endIdx = endIndex(str, index, len);
+		if (eqIdx > endIdx) {
+			index = str.lastIndexOf(";", eqIdx - 1) + 1;
+			continue;
+		}
+		const key = valueSlice(str, index, eqIdx);
+		if (options?.filter && !options.filter(key)) {
+			index = endIdx + 1;
+			continue;
+		}
+		const val = dec(valueSlice(str, eqIdx + 1, endIdx));
+		if (allowMultiple) {
+			const existing = obj[key];
+			if (existing === void 0) obj[key] = val;
+			else if (Array.isArray(existing)) existing.push(val);
+			else obj[key] = [existing, val];
+		} else if (obj[key] === void 0) obj[key] = val;
+		index = endIdx + 1;
+	} while (index < len);
+	return obj;
+}
+function decode(str) {
+	if (!str.includes("%")) return str;
+	try {
+		return decodeURIComponent(str);
+	} catch {
+		return str;
+	}
+}
+const maxAgeRegExp = /^-?\d+$/;
+const _nullProto = /* @__PURE__ */ Object.getPrototypeOf({});
+function parseSetCookie(str, options) {
+	const len = str.length;
+	let _endIdx = len;
+	let eqIdx = -1;
+	for (let i = 0; i < len; i++) {
+		const c = str.charCodeAt(i);
+		if (c === 59) {
+			_endIdx = i;
+			break;
+		}
+		if (c === 61 && eqIdx === -1) eqIdx = i;
+	}
+	if (eqIdx >= _endIdx) eqIdx = -1;
+	const name = eqIdx === -1 ? "" : _trim(str, 0, eqIdx);
+	if (name && name in _nullProto) return void 0;
+	let value = eqIdx === -1 ? _trim(str, 0, _endIdx) : _trim(str, eqIdx + 1, _endIdx);
+	if (!name && !value) return void 0;
+	if (name.length + value.length > 4096) return void 0;
+	if (options?.decode !== false) value = _decode(value, options?.decode);
+	const setCookie = {
+		name,
+		value
+	};
+	let index = _endIdx + 1;
+	while (index < len) {
+		let endIdx = len;
+		let attrEqIdx = -1;
+		for (let i = index; i < len; i++) {
+			const c = str.charCodeAt(i);
+			if (c === 59) {
+				endIdx = i;
+				break;
+			}
+			if (c === 61 && attrEqIdx === -1) attrEqIdx = i;
+		}
+		if (attrEqIdx >= endIdx) attrEqIdx = -1;
+		const attr = attrEqIdx === -1 ? _trim(str, index, endIdx) : _trim(str, index, attrEqIdx);
+		const val = attrEqIdx === -1 ? void 0 : _trim(str, attrEqIdx + 1, endIdx);
+		if (val === void 0 || val.length <= 1024) switch (attr.toLowerCase()) {
+			case "httponly":
+				setCookie.httpOnly = true;
+				break;
+			case "secure":
+				setCookie.secure = true;
+				break;
+			case "partitioned":
+				setCookie.partitioned = true;
+				break;
+			case "domain":
+				if (val) setCookie.domain = (val.charCodeAt(0) === 46 ? val.slice(1) : val).toLowerCase();
+				break;
+			case "path":
+				setCookie.path = val;
+				break;
+			case "max-age":
+				if (val && maxAgeRegExp.test(val)) setCookie.maxAge = Math.min(Number(val), COOKIE_MAX_AGE_LIMIT);
+				break;
+			case "expires": {
+				if (!val) break;
+				const date = new Date(val);
+				if (Number.isFinite(date.valueOf())) {
+					const maxDate = new Date(Date.now() + COOKIE_MAX_AGE_LIMIT * 1e3);
+					setCookie.expires = date > maxDate ? maxDate : date;
+				}
+				break;
+			}
+			case "priority": {
+				if (!val) break;
+				const priority = val.toLowerCase();
+				if (priority === "low" || priority === "medium" || priority === "high") setCookie.priority = priority;
+				break;
+			}
+			case "samesite": {
+				if (!val) break;
+				const sameSite = val.toLowerCase();
+				if (sameSite === "lax" || sameSite === "strict" || sameSite === "none") setCookie.sameSite = sameSite;
+				else setCookie.sameSite = "lax";
+				break;
+			}
+			default: {
+				const attrLower = attr.toLowerCase();
+				if (attrLower && !(attrLower in _nullProto)) setCookie[attrLower] = val;
+			}
+		}
+		index = endIdx + 1;
+	}
+	return setCookie;
+}
+function _trim(str, start, end) {
+	if (start === end) return "";
+	let s = start;
+	let e = end;
+	while (s < e && (str.charCodeAt(s) === 32 || str.charCodeAt(s) === 9)) s++;
+	while (e > s && (str.charCodeAt(e - 1) === 32 || str.charCodeAt(e - 1) === 9)) e--;
+	return str.slice(s, e);
+}
+function _decode(value, decode) {
+	if (!decode && !value.includes("%")) return value;
+	try {
+		return (decode || decodeURIComponent)(value);
+	} catch {
+		return value;
+	}
 }
 
 // node_modules/nuxt/dist/app/diagnostics/_shared.js
@@ -951,48 +1126,48 @@ var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default = [
 		name: "auth-login",
 		path: "/auth/login",
 		alias: ["/login"],
-		component: () => import('../build/login-o2gBgrwE.mjs')
+		component: () => import('../build/login-J2WO3swT.mjs')
 	},
 	{
 		name: "auth-register",
 		path: "/auth/register",
 		alias: ["/register"],
-		component: () => import('../build/register-CFYehR15.mjs')
+		component: () => import('../build/register-D-_epXYu.mjs')
 	},
 	{
 		name: "attractions-id",
 		path: "/attractions/:id()",
-		component: () => import('../build/_id_-Bm14ux24.mjs')
+		component: () => import('../build/_id_-DbAXiljl.mjs')
 	},
 	{
 		name: "admin",
 		path: "/admin",
-		component: () => import('../build/admin-BnhWyyna.mjs')
+		component: () => import('../build/admin-Djv16o8k.mjs')
 	},
 	{
 		name: "business",
 		path: "/business",
-		component: () => import('../build/business-Df-5--2u.mjs')
+		component: () => import('../build/business-Bkfg0ooM.mjs')
 	},
 	{
 		name: "explore",
 		path: "/explore",
-		component: () => import('../build/explore-C-XZ8Kz2.mjs')
+		component: () => import('../build/explore-Bl4imC7x.mjs')
 	},
 	{
 		name: "planner",
 		path: "/planner",
-		component: () => import('../build/planner-Bsg1fJeP.mjs')
+		component: () => import('../build/planner-DPIGNvpG.mjs')
 	},
 	{
 		name: "profile",
 		path: "/profile",
-		component: () => import('../build/profile-Dxj7GVdh.mjs')
+		component: () => import('../build/profile-BEqg7LyS.mjs')
 	},
 	{
 		name: "index",
 		path: "/",
-		component: () => import('../build/pages-BnId4IB3.mjs')
+		component: () => import('../build/pages-nIiVCptN.mjs')
 	}
 ];
 // node_modules/nuxt/dist/pages/runtime/plugins/router.js
@@ -1369,24 +1544,224 @@ function normalizeSlot(slot, data) {
 	const slotContent = slot(data);
 	return slotContent.length === 1 ? h(slotContent[0]) : h(Fragment, void 0, slotContent);
 }
-// \0plugin-vue:export-helper
-var _plugin_vue_export_helper_default = (sfc, props) => {
-	const target = sfc.__vccOpts || sfc;
-	for (const [key, val] of props) target[key] = val;
-	return target;
-};
-// app/app.vue
-var _sfc_main$2 = {};
-function _sfc_ssrRender(_ctx, _push, _parent, _attrs) {
-	_push(ssrRenderComponent(page_default, _attrs, null, _parent));
+// node_modules/nuxt/dist/app/composables/ssr.js
+/** @since 3.0.0 */
+function useRequestEvent(nuxtApp) {
+	nuxtApp ||= useNuxtApp();
+	return nuxtApp.ssrContext?.event;
 }
-var _sfc_setup$2 = _sfc_main$2.setup;
-_sfc_main$2.setup = (props, ctx) => {
+// node_modules/nuxt/dist/app/composables/cookie.js
+function parseCookieValue(value) {
+	if (value === "undefined") return;
+	try {
+		const parsed = JSON.parse(value);
+		if (typeof parsed === "number" && String(parsed) !== value) return value;
+		return parsed;
+	} catch {
+		return value;
+	}
+}
+function resolveExpires(expires) {
+	return typeof expires === "function" ? expires() : expires;
+}
+var CookieDefaults = {
+	path: "/",
+	watch: true,
+	decode: (val) => val ? parseCookieValue(decodeURIComponent(val)) : val,
+	encode: (val) => {
+		if (typeof val !== "string" || val === "undefined") return encodeURIComponent(JSON.stringify(val));
+		try {
+			if (typeof JSON.parse(val) !== "string") return encodeURIComponent(JSON.stringify(val));
+		} catch {}
+		return encodeURIComponent(val);
+	},
+	refresh: false
+};
+function useCookie(name, _opts) {
+	const opts = {
+		...CookieDefaults,
+		..._opts
+	};
+	opts.filter ??= (key) => key === name;
+	const nuxtApp = useNuxtApp();
+	const jar = readServerCookieJar(nuxtApp);
+	const rawValue = opts.filter(name) ? jar[name] : void 0;
+	const cookies = { [name]: rawValue === void 0 ? void 0 : opts.decode(rawValue) };
+	let delay;
+	if (opts.maxAge !== void 0) delay = opts.maxAge * 1e3;
+	else if (opts.expires) {
+		const expires = resolveExpires(opts.expires);
+		if (expires) delay = expires.getTime() - Date.now();
+	}
+	const hasExpired = delay !== void 0 && delay <= 0;
+	cookies[name] === void 0 || cookies[name];
+	const cookie = cookieServerRef(name, klona(hasExpired ? void 0 : cookies[name] ?? opts.default?.()), opts, nuxtApp);
+	if (!opts.readonly && rawValue === void 0) {
+		const initialValue = cookie.value;
+		if (initialValue !== void 0 && initialValue !== null) updateServerCookieJar(nuxtApp, name, opts.encode(initialValue));
+	}
+	{
+		const writeFinalCookieValue = () => {
+			const valueIsSame = isEqual(cookie.value, cookies[name]);
+			if (opts.readonly || valueIsSame && !opts.refresh) return;
+			nuxtApp._cookiesChanged ||= {};
+			if (valueIsSame && opts.refresh && !nuxtApp._cookiesChanged[name]) return;
+			nuxtApp._cookies ||= {};
+			if (name in nuxtApp._cookies) {
+				if (isEqual(cookie.value, nuxtApp._cookies[name])) return;
+			}
+			nuxtApp._cookies[name] = cookie.value;
+			const encoded = cookie.value === null || cookie.value === void 0 ? void 0 : opts.encode(cookie.value);
+			writeServerCookie(useRequestEvent(nuxtApp), name, encoded, opts);
+		};
+		const unhook = nuxtApp.hooks.hookOnce("app:rendered", writeFinalCookieValue);
+		nuxtApp.hooks.hookOnce("app:error", () => {
+			unhook();
+			return writeFinalCookieValue();
+		});
+	}
+	return cookie;
+}
+/**
+* Cookie jar for the current request, seeded from the incoming `cookie` header.
+*
+* @see https://github.com/nuxt/nuxt/issues/22631
+*/
+function readServerCookieJar(nuxtApp) {
+	const event = useRequestEvent(nuxtApp);
+	const jar = nuxtApp._cookieJar ??= parse(getRequestHeader(event, "cookie") || "", { decode: identity });
+	const setCookies = readResponseSetCookies(event);
+	for (let i = nuxtApp._appliedSetCookies || 0; i < setCookies.length; i++) {
+		const cookie = parseSetCookie(setCookies[i], { decode: false });
+		if (!cookie) continue;
+		if (cookie.maxAge !== void 0 && cookie.maxAge <= 0 || cookie.expires && cookie.expires.getTime() <= Date.now()) delete jar[cookie.name];
+		else jar[cookie.name] = cookie.value;
+	}
+	nuxtApp._appliedSetCookies = setCookies.length;
+	return jar;
+}
+function updateServerCookieJar(nuxtApp, name, value) {
+	const jar = readServerCookieJar(nuxtApp);
+	if (value === void 0) delete jar[name];
+	else jar[name] = value;
+}
+function readResponseSetCookies(event) {
+	return splitCookiesString(getResponseHeader(event, "set-cookie") ?? []);
+}
+var identity = (val) => val;
+function toSerializeOptions(opts) {
+	const { encode: _encode, decode: _decode, expires, ...rest } = opts;
+	return {
+		...rest,
+		expires: resolveExpires(expires),
+		encode: identity
+	};
+}
+function writeServerCookie(event, name, value, opts = {}) {
+	if (event) {
+		const serializeOpts = toSerializeOptions(opts);
+		if (value !== void 0) return setCookie(event, name, value, serializeOpts);
+		if (getCookie(event, name) !== void 0 || responseSetsCookie(event, name)) return deleteCookie(event, name, serializeOpts);
+	}
+}
+function responseSetsCookie(event, name) {
+	for (const raw of readResponseSetCookies(event)) if (parseSetCookie(raw, { decode: false })?.name === name) return true;
+	return false;
+}
+/**
+* Custom ref that tracks explicit cookie writes on the server.
+*
+* This is required for the `refresh` option to ensure the cookie is
+* re-written on SSR even when the value remains unchanged.
+*/
+function cookieServerRef(name, value, opts, nuxtApp) {
+	const internalRef = ref(value);
+	return customRef((track, trigger) => {
+		return {
+			get() {
+				track();
+				return internalRef.value;
+			},
+			set(newValue) {
+				nuxtApp._cookiesChanged ||= {};
+				nuxtApp._cookiesChanged[name] = true;
+				if (!opts.readonly) updateServerCookieJar(nuxtApp, name, newValue === null || newValue === void 0 ? void 0 : opts.encode(newValue));
+				internalRef.value = newValue;
+				trigger();
+			}
+		};
+	});
+}
+// node_modules/nuxt/dist/app/composables/state.js
+var useStateKeyPrefix = "$s";
+function useState(...args) {
+	const autoKey = typeof args[args.length - 1] === "string" ? args.pop() : void 0;
+	if (typeof args[0] !== "string") args.unshift(autoKey);
+	const [_key, init] = args;
+	if (!_key || typeof _key !== "string") throw stateDiagnostics.NUXT_E7009({ key: _key });
+	if (init !== void 0 && typeof init !== "function") throw stateDiagnostics.NUXT_E7007({ type: typeof init });
+	const key = useStateKeyPrefix + _key;
+	const nuxtApp = useNuxtApp();
+	const state = toRef(nuxtApp.payload.state, key);
+	if (init) nuxtApp._state[key] ??= { _default: init };
+	if (state.value === void 0 && init) {
+		const initialValue = init();
+		if (isRef(initialValue)) {
+			nuxtApp.payload.state[key] = initialValue;
+			return state;
+		}
+		state.value = initialValue;
+	}
+	return state;
+}
+// app/composables/useTheme.ts
+function useTheme() {
+	const preference = useCookie("theme", {
+		sameSite: "lax",
+		default: () => "system"
+	});
+	const systemDark = useState("theme-system-dark", () => false);
+	const resolvedTheme = computed(() => {
+		if (preference.value === "system") return systemDark.value ? "dark" : "light";
+		return preference.value;
+	});
+	function applyDomTheme() {}
+	function setTheme(next) {
+		preference.value = next;
+	}
+	watch([preference, systemDark], applyDomTheme);
+	return {
+		preference,
+		resolvedTheme,
+		setTheme
+	};
+}
+// app/app.vue?vue&type=script&setup=true&lang.ts
+var app_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ defineComponent({
+	__name: "app",
+	__ssrInlineRender: true,
+	setup(__props) {
+		const { preference } = useTheme();
+		useHead({
+			htmlAttrs: { class: computed(() => preference.value === "dark" ? "dark" : "") },
+			script: [{
+				innerHTML: `(function(){try{var m=document.cookie.match(/(?:^|; )theme=([^;]*)/);var t=m?decodeURIComponent(m[1]):'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';}catch(e){}})();`,
+				tagPosition: "head"
+			}]
+		});
+		return (_ctx, _push, _parent, _attrs) => {
+			_push(ssrRenderComponent(page_default, _attrs, null, _parent));
+		};
+	}
+});
+// app/app.vue
+var _sfc_setup$2 = app_vue_vue_type_script_setup_true_lang_default.setup;
+app_vue_vue_type_script_setup_true_lang_default.setup = (props, ctx) => {
 	const ssrContext = useSSRContext();
 	(ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("app.vue");
 	return _sfc_setup$2 ? _sfc_setup$2(props, ctx) : void 0;
 };
-var app_default = /*#__PURE__*/ _plugin_vue_export_helper_default(_sfc_main$2, [["ssrRender", _sfc_ssrRender]]);
+var app_default = app_vue_vue_type_script_setup_true_lang_default;
 // node_modules/nuxt/dist/app/components/nuxt-error-page.vue
 var _sfc_main$1 = {
 	__name: "nuxt-error-page",
@@ -1399,8 +1774,8 @@ var _sfc_main$1 = {
 		const statusText = _error.statusMessage ?? (is404 ? "Page Not Found" : "Internal Server Error");
 		const description = _error.message || _error.toString();
 		const stack = void 0;
-		const _Error404 = defineAsyncComponent(() => import('../build/error-404-BBJ2xPK9.mjs'));
-		const _Error = defineAsyncComponent(() => import('../build/error-500-C9lLv-V6.mjs'));
+		const _Error404 = defineAsyncComponent(() => import('../build/error-404-kJOZfM9B.mjs'));
+		const _Error = defineAsyncComponent(() => import('../build/error-500-BuvSNWUK.mjs'));
 		const ErrorTemplate = is404 ? _Error404 : _Error;
 		return (_ctx, _push, _parent, _attrs) => {
 			_push(ssrRenderComponent(unref(ErrorTemplate), mergeProps({
@@ -1499,5 +1874,5 @@ const entry = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 	default: entry_default
 }, Symbol.toStringTag, { value: 'Module' }));
 
-export { $fetch$1 as $, _plugin_vue_export_helper_default as _, useRoute$1 as a, useRuntimeConfig as b, useNuxtApp as c, useRouter as d, encodeRoutePath as e, sanitizeAnchorHref as f, isRootedPath as g, nuxtLinkDefaults as h, isAbsoluteHref as i, entry as j, navigateTo as n, resolveRouteObject as r, stateDiagnostics as s, tryUseNuxtApp as t, useHead as u, vforBound as v };
+export { $fetch$1 as $, useRoute$1 as a, useCookie as b, useRuntimeConfig as c, useState as d, useTheme as e, useRouter as f, encodeRoutePath as g, isRootedPath as h, isAbsoluteHref as i, useNuxtApp as j, nuxtLinkDefaults as k, entry as l, navigateTo as n, resolveRouteObject as r, sanitizeAnchorHref as s, tryUseNuxtApp as t, useHead as u, vforBound as v };
 //# sourceMappingURL=entry.mjs.map

@@ -181,9 +181,9 @@ async function handleConfirmLogout() {
         <!-- Account Information Strip from /me & /auth/login -->
         <div
           v-if="profile"
-          class="mt-6 grid grid-cols-1 gap-3 border-t border-slate-200/80 pt-5 sm:grid-cols-3"
+          class="mt-6 grid grid-cols-1 gap-3 border-t border-border/70 pt-5 sm:grid-cols-3"
         >
-          <div class="flex items-center gap-3 rounded-2xl bg-white/85 px-4 py-3">
+          <div class="flex items-center gap-3 rounded-2xl bg-card/90 px-4 py-3">
             <Mail class="size-4 shrink-0 text-muted-foreground" />
             <div class="min-w-0">
               <p class="text-[11px] font-medium text-muted-foreground">Email</p>
@@ -193,7 +193,7 @@ async function handleConfirmLogout() {
             </div>
           </div>
 
-          <div class="flex items-center gap-3 rounded-2xl bg-white/85 px-4 py-3">
+          <div class="flex items-center gap-3 rounded-2xl bg-card/90 px-4 py-3">
             <Phone class="size-4 shrink-0 text-muted-foreground" />
             <div class="min-w-0">
               <p class="text-[11px] font-medium text-muted-foreground">Phone</p>
@@ -203,7 +203,7 @@ async function handleConfirmLogout() {
             </div>
           </div>
 
-          <div class="flex items-center gap-3 rounded-2xl bg-white/85 px-4 py-3">
+          <div class="flex items-center gap-3 rounded-2xl bg-card/90 px-4 py-3">
             <ShieldCheck class="size-4 shrink-0 text-muted-foreground" />
             <div class="min-w-0">
               <p class="text-[11px] font-medium text-muted-foreground">Status &amp; Roles</p>

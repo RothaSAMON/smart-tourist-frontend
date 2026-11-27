@@ -163,13 +163,13 @@ const filteredAttractions = computed(() => {
               Build AI Itinerary
             </UiButton>
           </NuxtLink>
-          <div class="inline-flex rounded-full border border-border bg-white p-1">
+          <div class="inline-flex rounded-full border border-border bg-card p-1">
             <button
               type="button"
               class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors"
               :class="
                 viewMode === 'grid'
-                  ? 'bg-neutral-900 text-white'
+                  ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground'
               "
               @click="viewMode = 'grid'"
@@ -182,7 +182,7 @@ const filteredAttractions = computed(() => {
               class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors"
               :class="
                 viewMode === 'map'
-                  ? 'bg-neutral-900 text-white'
+                  ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground'
               "
               @click="viewMode = 'map'"

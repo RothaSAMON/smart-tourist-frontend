@@ -58,15 +58,15 @@ import { FEATURE_COLLAGE_IMAGES, HERO_AVATARS, UNIQUE_FEATURES } from '@/data/ho
 
             <!-- Floating Top-Right Rating Pill -->
             <div
-              class="absolute -top-4 right-4 flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold text-foreground shadow-lg sm:right-6 sm:text-sm"
+              class="absolute -top-4 right-4 flex items-center gap-1.5 rounded-full bg-card px-4 py-2 text-xs font-semibold text-card-foreground shadow-lg sm:right-6 sm:text-sm"
             >
-              <Star class="size-4 fill-neutral-900 text-neutral-900" />
+              <Star class="size-4 fill-amber-400 text-amber-400" />
               <span>4.8 Avg Rating</span>
             </div>
 
             <!-- Overlapping Mid-Left Framed Secondary Image -->
             <div
-              class="absolute top-[22%] -left-[22%] w-[58%] overflow-hidden rounded-2xl border-4 border-white bg-white shadow-2xl sm:-left-[26%] sm:w-[56%]"
+              class="absolute top-[22%] -left-[22%] w-[58%] overflow-hidden rounded-2xl border-4 border-card bg-card shadow-2xl sm:-left-[26%] sm:w-[56%]"
             >
               <img
                 :src="FEATURE_COLLAGE_IMAGES.insetTower"
@@ -78,7 +78,7 @@ import { FEATURE_COLLAGE_IMAGES, HERO_AVATARS, UNIQUE_FEATURES } from '@/data/ho
 
             <!-- Floating Bottom-Left Travelers Pill -->
             <div
-              class="absolute bottom-8 -left-[14%] flex items-center gap-2.5 rounded-full bg-white py-2 pr-4 pl-2.5 shadow-xl sm:-left-[16%]"
+              class="absolute bottom-8 -left-[14%] flex items-center gap-2.5 rounded-full bg-card py-2 pr-4 pl-2.5 text-card-foreground shadow-xl sm:-left-[16%]"
             >
               <div class="flex -space-x-2">
                 <UiAvatar

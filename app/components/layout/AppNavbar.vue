@@ -44,7 +44,7 @@ function isActive(to: string) {
     class="relative z-30 w-full"
     :class="
       props.variant === 'solid'
-        ? 'sticky top-0 border-b border-border/80 bg-white/90 backdrop-blur-md'
+        ? 'sticky top-0 border-b border-border/80 bg-background/90 backdrop-blur-md'
         : ''
     "
   >
@@ -96,6 +96,8 @@ function isActive(to: string) {
 
       <!-- Right Actions (Desktop) -->
       <div class="hidden items-center gap-2.5 md:flex">
+        <CommonThemeToggle :variant="props.variant" />
+
         <NuxtLink
           to="/profile"
           class="relative flex size-9 items-center justify-center rounded-full border transition-colors"
@@ -228,6 +230,15 @@ function isActive(to: string) {
                   {{ favoriteIds.length }}
                 </UiBadge>
               </NuxtLink>
+
+              <UiSeparator class="my-4" />
+
+              <div class="px-2">
+                <p class="mb-2 px-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                  Appearance
+                </p>
+                <CommonThemeToggle mode="segmented" />
+              </div>
             </div>
 
             <!-- Sidebar Footer CTA -->

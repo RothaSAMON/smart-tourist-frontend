@@ -94,6 +94,10 @@
 }
 
 .dark {
+    --brand-lime: #d9f95b;
+    --brand-lime-hover: #ccf043;
+    --brand-lime-foreground: #141a08;
+    --surface-sky: oklch(0.22 0.025 245);
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);

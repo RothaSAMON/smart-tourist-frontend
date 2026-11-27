@@ -99,7 +99,7 @@ function toggleLike(id: string) {
         <!-- Right Floating Spotlight Card -->
         <div class="flex justify-center lg:col-span-6 lg:justify-end">
           <div
-            class="w-full max-w-md rounded-2xl bg-white p-3.5 shadow-2xl sm:p-4"
+            class="w-full max-w-md rounded-2xl bg-card p-3.5 text-card-foreground shadow-2xl sm:p-4"
           >
             <div class="flex flex-col gap-4 sm:flex-row">
               <!-- Card Thumbnail -->
