@@ -31,6 +31,13 @@ const budgetUsd = ref(250)
 const season = ref('Dry / Cool (Nov – Feb)')
 const selectedInterests = ref<VibeTag[]>(['Nature', 'Local Food', 'Culture'])
 
+const provinceOptions = CAMBODIA_PROVINCES.map((p) => ({ label: p, value: p }))
+const seasonOptions = [
+  { label: 'Dry / Cool (Nov – Feb)', value: 'Dry / Cool (Nov – Feb)' },
+  { label: 'Hot & Sunny (Mar – May)', value: 'Hot & Sunny (Mar – May)' },
+  { label: 'Green Season (Jun – Oct)', value: 'Green Season (Jun – Oct)' },
+]
+
 const isGenerating = ref(false)
 const planSavedNotice = ref(false)
 const generatedPlan = ref<SavedTripPlan>(INITIAL_SAVED_PLANS[0]!)
@@ -220,11 +227,11 @@ const budgetUsagePercent = computed(() => {
             class="mt-6 flex flex-col gap-2.5 rounded-2xl bg-white p-2.5 text-left shadow-xl sm:flex-row sm:items-center"
             @submit.prevent="generateItinerary"
           >
-            <input
+            <UiInput
               v-model="promptInput"
               type="text"
               placeholder='e.g. "I have 3 days in Siem Reap with a budget of $250. I like nature and local food."'
-              class="h-11 flex-1 bg-transparent px-3 text-sm font-medium text-neutral-900 placeholder:text-neutral-400 focus:outline-none"
+              class="h-11 flex-1 border-0 bg-transparent px-3 text-sm font-medium text-neutral-900 shadow-none placeholder:text-neutral-400 focus-visible:ring-0"
             />
             <UiButton
               type="submit"
@@ -265,25 +272,20 @@ const budgetUsagePercent = computed(() => {
               </UiCardDescription>
             </UiCardHeader>
             <UiCardContent class="space-y-4">
-              <div>
-                <label class="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                  Province in Cambodia
-                </label>
-                <select
+              <div class="space-y-1.5">
+                <UiLabel>Province in Cambodia</UiLabel>
+                <CommonSearchableSelect
                   v-model="selectedProvince"
-                  class="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm font-medium outline-none"
-                >
-                  <option v-for="p in CAMBODIA_PROVINCES" :key="p" :value="p">
-                    {{ p }}
-                  </option>
-                </select>
+                  :options="provinceOptions"
+                  placeholder="Select a province"
+                  search-placeholder="Search province..."
+                  aria-label="Select province in Cambodia"
+                />
               </div>
 
               <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                    Days (1–5)
-                  </label>
+                <div class="space-y-1.5">
+                  <UiLabel>Days (1–5)</UiLabel>
                   <UiInput
                     v-model.number="daysCount"
                     type="number"
@@ -291,10 +293,8 @@ const budgetUsagePercent = computed(() => {
                     max="5"
                   />
                 </div>
-                <div>
-                  <label class="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                    Budget ($ USD)
-                  </label>
+                <div class="space-y-1.5">
+                  <UiLabel>Budget ($ USD)</UiLabel>
                   <UiInput
                     v-model.number="budgetUsd"
                     type="number"
@@ -304,18 +304,15 @@ const budgetUsagePercent = computed(() => {
                 </div>
               </div>
 
-              <div>
-                <label class="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                  Travel Season
-                </label>
-                <select
+              <div class="space-y-1.5">
+                <UiLabel>Travel Season</UiLabel>
+                <CommonSearchableSelect
                   v-model="season"
-                  class="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm font-medium outline-none"
-                >
-                  <option>Dry / Cool (Nov – Feb)</option>
-                  <option>Hot &amp; Sunny (Mar – May)</option>
-                  <option>Green Season (Jun – Oct)</option>
-                </select>
+                  :options="seasonOptions"
+                  placeholder="Select travel season"
+                  search-placeholder="Search season..."
+                  aria-label="Select travel season"
+                />
               </div>
 
               <div>

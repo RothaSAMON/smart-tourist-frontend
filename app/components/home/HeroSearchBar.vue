@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { Landmark, MapPin, Search } from '@lucide/vue'
 import type { SearchFilters } from '@/types/tourism'
 
@@ -26,6 +26,18 @@ watch(
   { deep: true },
 )
 
+const selectedProvinceModel = computed({
+  get: () => form.province || 'all',
+  set: (value: string) => {
+    form.province = value === 'all' ? '' : value
+  },
+})
+
+const provinceOptions = computed(() => [
+  { label: 'All Provinces', value: 'all' },
+  ...props.provinces.map((p) => ({ label: p, value: p })),
+])
+
 function handleSubmit() {
   emit('search', { ...form })
 }
@@ -37,38 +49,33 @@ function handleSubmit() {
     @submit.prevent="handleSubmit"
   >
     <div class="grid grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_1.2fr_auto] sm:gap-0">
-      <!-- Province -->
-      <label class="flex items-center gap-3 rounded-xl px-4 py-2 text-left transition-colors hover:bg-neutral-50 sm:rounded-full">
+      <!-- Province (shadcn-vue Combobox) -->
+      <div class="flex items-center gap-3 rounded-xl px-4 py-1.5 text-left transition-colors hover:bg-neutral-50 sm:rounded-full">
         <MapPin class="size-4 shrink-0 text-neutral-500" />
-        <span class="min-w-0 flex-1">
+        <div class="min-w-0 flex-1">
           <span class="block text-[11px] font-medium text-neutral-400">Province</span>
-          <select
-            v-model="form.province"
+          <CommonSearchableSelect
+            v-model="selectedProvinceModel"
+            :options="provinceOptions"
+            placeholder="All Provinces"
+            search-placeholder="Search province..."
+            empty-text="No province found."
             aria-label="Filter by province in Cambodia"
-            class="w-full cursor-pointer bg-transparent text-xs font-semibold text-neutral-900 focus:outline-none sm:text-sm"
-          >
-            <option value="">All Provinces</option>
-            <option
-              v-for="province in provinces"
-              :key="province"
-              :value="province"
-            >
-              {{ province }}
-            </option>
-          </select>
-        </span>
-      </label>
+            trigger-class="h-7 border-0 bg-transparent px-0 py-0 text-xs font-semibold text-neutral-900 shadow-none focus-visible:ring-0 sm:text-sm"
+          />
+        </div>
+      </div>
 
-      <!-- Attraction -->
-      <label class="flex items-center gap-3 rounded-xl border-t border-neutral-100 px-4 py-2 text-left transition-colors hover:bg-neutral-50 sm:rounded-full sm:border-t-0 sm:border-l sm:border-neutral-200/80">
+      <!-- Attraction (shadcn-vue Input) -->
+      <label class="flex items-center gap-3 rounded-xl border-t border-neutral-100 px-4 py-1.5 text-left transition-colors hover:bg-neutral-50 sm:rounded-full sm:border-t-0 sm:border-l sm:border-neutral-200/80">
         <Landmark class="size-4 shrink-0 text-neutral-500" />
         <span class="min-w-0 flex-1">
           <span class="block text-[11px] font-medium text-neutral-400">Attraction</span>
-          <input
+          <UiInput
             v-model="form.attraction"
             type="text"
             placeholder="e.g. Angkor Wat, Koh Rong..."
-            class="w-full bg-transparent text-xs font-semibold text-neutral-900 placeholder:text-neutral-500 focus:outline-none sm:text-sm"
+            class="h-7 border-0 bg-transparent px-0 py-0 text-xs font-semibold text-neutral-900 shadow-none placeholder:text-neutral-500 focus-visible:ring-0 sm:text-sm"
           />
         </span>
       </label>

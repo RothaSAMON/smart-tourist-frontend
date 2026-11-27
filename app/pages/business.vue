@@ -19,6 +19,9 @@ useHead({
 const store = useTourismStore()
 const activeTab = ref<'bookings' | 'services' | 'register'>('bookings')
 
+const businessTypeOptions = BUSINESS_TYPES.map((t) => ({ label: t, value: t }))
+const provinceOptions = CAMBODIA_PROVINCES.map((p) => ({ label: p, value: p }))
+
 // Add new service form
 const newService = reactive({
   name: '',
@@ -170,269 +173,258 @@ function submitBusinessProfile() {
         </UiCard>
       </div>
 
-      <!-- Tabs -->
-      <div class="mt-8 flex flex-wrap gap-2">
-        <UiButton
-          size="sm"
-          :variant="activeTab === 'bookings' ? 'brand' : 'outline'"
-          @click="activeTab = 'bookings'"
-        >
-          Manage Bookings ({{ store.businessBookings.value.length }})
-        </UiButton>
-        <UiButton
-          size="sm"
-          :variant="activeTab === 'services' ? 'brand' : 'outline'"
-          @click="activeTab = 'services'"
-        >
-          Services &amp; Pricing ({{ store.businessServices.value.length }})
-        </UiButton>
-        <UiButton
-          size="sm"
-          :variant="activeTab === 'register' ? 'brand' : 'outline'"
-          @click="activeTab = 'register'"
-        >
-          Business Profile &amp; Photos
-        </UiButton>
-      </div>
+      <!-- shadcn-vue Tabs -->
+      <UiTabs v-model="activeTab" class="mt-8">
+        <UiTabsList>
+          <UiTabsTrigger value="bookings">
+            Manage Bookings ({{ store.businessBookings.value.length }})
+          </UiTabsTrigger>
+          <UiTabsTrigger value="services">
+            Services &amp; Pricing ({{ store.businessServices.value.length }})
+          </UiTabsTrigger>
+          <UiTabsTrigger value="register">
+            Business Profile &amp; Photos
+          </UiTabsTrigger>
+        </UiTabsList>
 
-      <!-- Tab 1: Bookings -->
-      <UiCard v-if="activeTab === 'bookings'" class="mt-6">
-        <UiCardHeader>
-          <UiCardTitle>Incoming Tourist Bookings</UiCardTitle>
-          <UiCardDescription>
-            Confirm or decline reservations in real time
-          </UiCardDescription>
-        </UiCardHeader>
-        <UiCardContent class="space-y-3">
-          <div
-            v-for="bk in store.businessBookings.value"
-            :key="bk.id"
-            class="flex flex-col justify-between gap-3 rounded-2xl border border-border/80 p-4 sm:flex-row sm:items-center"
-          >
-            <div>
-              <div class="flex items-center gap-2">
-                <p class="text-sm font-semibold">{{ bk.guestName }}</p>
-                <UiBadge
-                  :variant="
-                    bk.status === 'confirmed'
-                      ? 'brand'
-                      : bk.status === 'pending'
-                        ? 'secondary'
-                        : 'outline'
-                  "
-                >
-                  {{ bk.status }}
-                </UiBadge>
-              </div>
-              <p class="mt-0.5 text-xs text-muted-foreground">
-                {{ bk.serviceName }} · {{ bk.date }} · {{ bk.guests }} guests
-              </p>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <span class="mr-2 text-sm font-bold">${{ bk.totalUsd }}</span>
-              <UiButton
-                v-if="bk.status === 'pending'"
-                variant="brand"
-                size="sm"
-                @click="updateBookingStatus(bk.id, 'confirmed')"
+        <!-- Tab 1: Bookings -->
+        <UiTabsContent value="bookings">
+          <UiCard>
+            <UiCardHeader>
+              <UiCardTitle>Incoming Tourist Bookings</UiCardTitle>
+              <UiCardDescription>
+                Confirm or decline reservations in real time
+              </UiCardDescription>
+            </UiCardHeader>
+            <UiCardContent class="space-y-3">
+              <div
+                v-for="bk in store.businessBookings.value"
+                :key="bk.id"
+                class="flex flex-col justify-between gap-3 rounded-2xl border border-border/80 p-4 sm:flex-row sm:items-center"
               >
-                Confirm
-              </UiButton>
-              <UiButton
-                v-if="bk.status === 'pending'"
-                variant="outline"
-                size="sm"
-                @click="updateBookingStatus(bk.id, 'cancelled')"
-              >
-                Decline
-              </UiButton>
-            </div>
-          </div>
-        </UiCardContent>
-      </UiCard>
-
-      <!-- Tab 2: Services & Pricing -->
-      <div v-else-if="activeTab === 'services'" class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <UiCard class="lg:col-span-5">
-          <UiCardHeader>
-            <UiCardTitle>Add New Service</UiCardTitle>
-            <UiCardDescription>
-              List a room, menu package, tour, or transport option
-            </UiCardDescription>
-          </UiCardHeader>
-          <UiCardContent>
-            <form class="space-y-3.5" @submit.prevent="addService">
-              <div>
-                <label class="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Service Name
-                </label>
-                <UiInput v-model="newService.name" required placeholder="e.g. Kampot Sunset Boat Tour" />
-              </div>
-
-              <div>
-                <label class="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Business Category
-                </label>
-                <select
-                  v-model="newService.category"
-                  class="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm font-medium outline-none"
-                >
-                  <option v-for="t in BUSINESS_TYPES" :key="t" :value="t">
-                    {{ t }}
-                  </option>
-                </select>
-              </div>
-
-              <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="mb-1 block text-xs font-semibold text-muted-foreground">
-                    Price ($ USD)
-                  </label>
-                  <UiInput v-model.number="newService.priceUsd" type="number" min="1" />
-                </div>
-                <div>
-                  <label class="mb-1 block text-xs font-semibold text-muted-foreground">
-                    Unit
-                  </label>
-                  <UiInput v-model="newService.unit" placeholder="per guest / night" />
-                </div>
-              </div>
-
-              <UiButton type="submit" variant="brand" class="w-full font-semibold">
-                <Plus class="size-4" />
-                Add Service
-              </UiButton>
-            </form>
-          </UiCardContent>
-        </UiCard>
-
-        <UiCard class="lg:col-span-7">
-          <UiCardHeader>
-            <UiCardTitle>Active Services &amp; Quick Price Update</UiCardTitle>
-          </UiCardHeader>
-          <UiCardContent class="space-y-3">
-            <div
-              v-for="srv in store.businessServices.value"
-              :key="srv.id"
-              class="flex flex-col justify-between gap-3 rounded-2xl border border-border/80 p-4 sm:flex-row sm:items-center"
-            >
-              <div>
-                <UiBadge variant="secondary" class="mb-1">{{ srv.category }}</UiBadge>
-                <p class="text-sm font-semibold">{{ srv.name }}</p>
-                <p class="text-xs text-muted-foreground">{{ srv.unit }}</p>
-              </div>
-              <div class="flex items-center gap-2">
-                <UiButton variant="outline" size="icon" @click="updatePrice(srv.id, -5)">
-                  -
-                </UiButton>
-                <span class="min-w-16 text-center text-sm font-bold">
-                  ${{ srv.priceUsd }}
-                </span>
-                <UiButton variant="outline" size="icon" @click="updatePrice(srv.id, 5)">
-                  +
-                </UiButton>
-              </div>
-            </div>
-          </UiCardContent>
-        </UiCard>
-      </div>
-
-      <!-- Tab 3: Business Registration & Photos -->
-      <UiCard v-else class="mt-6">
-        <UiCardHeader>
-          <UiCardTitle>Business Registration &amp; Photo Gallery</UiCardTitle>
-          <UiCardDescription>
-            Keep your listing accurate for AI Trip Planner recommendations
-          </UiCardDescription>
-        </UiCardHeader>
-        <UiCardContent>
-          <form class="grid grid-cols-1 gap-6 lg:grid-cols-12" @submit.prevent="submitBusinessProfile">
-            <div class="space-y-4 lg:col-span-7">
-              <div>
-                <label class="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Business Name
-                </label>
-                <UiInput v-model="bizForm.name" required />
-              </div>
-
-              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label class="mb-1 block text-xs font-semibold text-muted-foreground">
-                    Business Type
-                  </label>
-                  <select
-                    v-model="bizForm.type"
-                    class="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm font-medium outline-none"
-                  >
-                    <option v-for="t in BUSINESS_TYPES" :key="t" :value="t">
-                      {{ t }}
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label class="mb-1 block text-xs font-semibold text-muted-foreground">
-                    Province
-                  </label>
-                  <select
-                    v-model="bizForm.province"
-                    class="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm font-medium outline-none"
-                  >
-                    <option v-for="p in CAMBODIA_PROVINCES" :key="p" :value="p">
-                      {{ p }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label class="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Description
-                </label>
-                <UiTextarea v-model="bizForm.description" />
-              </div>
-
-              <div>
-                <label class="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Cover Photo URL
-                </label>
-                <UiInput v-model="bizForm.photoUrl" />
-              </div>
-
-              <div class="flex items-center gap-3">
-                <UiButton type="submit" variant="brand" class="font-semibold">
-                  Save Business Profile
-                </UiButton>
-                <span v-if="bizSavedNotice" class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
-                  <TrendingUp class="size-3.5" />
-                  Profile updated!
-                </span>
-              </div>
-            </div>
-
-            <div class="lg:col-span-5">
-              <p class="mb-2 text-xs font-semibold text-muted-foreground">Live Card Preview</p>
-              <div class="overflow-hidden rounded-2xl border border-border">
-                <img
-                  :src="bizForm.photoUrl"
-                  :alt="bizForm.name"
-                  class="h-48 w-full object-cover"
-                />
-                <div class="p-4">
                   <div class="flex items-center gap-2">
-                    <UiBadge variant="brand">{{ bizForm.type }}</UiBadge>
-                    <span class="text-xs text-muted-foreground">{{ bizForm.province }}, Cambodia</span>
+                    <p class="text-sm font-semibold">{{ bk.guestName }}</p>
+                    <UiBadge
+                      :variant="
+                        bk.status === 'confirmed'
+                          ? 'brand'
+                          : bk.status === 'pending'
+                            ? 'secondary'
+                            : 'outline'
+                      "
+                    >
+                      {{ bk.status }}
+                    </UiBadge>
                   </div>
-                  <p class="mt-2 font-bold">{{ bizForm.name }}</p>
-                  <p class="mt-1 text-xs text-muted-foreground">
-                    {{ bizForm.description }}
+                  <p class="mt-0.5 text-xs text-muted-foreground">
+                    {{ bk.serviceName }} · {{ bk.date }} · {{ bk.guests }} guests
                   </p>
                 </div>
+
+                <div class="flex items-center gap-2">
+                  <span class="mr-2 text-sm font-bold">${{ bk.totalUsd }}</span>
+                  <UiButton
+                    v-if="bk.status === 'pending'"
+                    variant="brand"
+                    size="sm"
+                    @click="updateBookingStatus(bk.id, 'confirmed')"
+                  >
+                    Confirm
+                  </UiButton>
+                  <UiButton
+                    v-if="bk.status === 'pending'"
+                    variant="outline"
+                    size="sm"
+                    @click="updateBookingStatus(bk.id, 'cancelled')"
+                  >
+                    Decline
+                  </UiButton>
+                </div>
               </div>
-            </div>
-          </form>
-        </UiCardContent>
-      </UiCard>
+            </UiCardContent>
+          </UiCard>
+        </UiTabsContent>
+
+        <!-- Tab 2: Services & Pricing -->
+        <UiTabsContent value="services">
+          <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <UiCard class="lg:col-span-5">
+              <UiCardHeader>
+                <UiCardTitle>Add New Service</UiCardTitle>
+                <UiCardDescription>
+                  List a room, menu package, tour, or transport option
+                </UiCardDescription>
+              </UiCardHeader>
+              <UiCardContent>
+                <form class="space-y-4" @submit.prevent="addService">
+                  <div class="space-y-1.5">
+                    <UiLabel for="srv-name">Service Name</UiLabel>
+                    <UiInput
+                      id="srv-name"
+                      v-model="newService.name"
+                      required
+                      placeholder="e.g. Kampot Sunset Boat Tour"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <UiLabel>Business Category</UiLabel>
+                    <CommonSearchableSelect
+                      v-model="newService.category"
+                      :options="businessTypeOptions"
+                      placeholder="Select category"
+                      search-placeholder="Search category..."
+                      aria-label="Select business category"
+                    />
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1.5">
+                      <UiLabel for="srv-price">Price ($ USD)</UiLabel>
+                      <UiInput
+                        id="srv-price"
+                        v-model.number="newService.priceUsd"
+                        type="number"
+                        min="1"
+                      />
+                    </div>
+                    <div class="space-y-1.5">
+                      <UiLabel for="srv-unit">Unit</UiLabel>
+                      <UiInput
+                        id="srv-unit"
+                        v-model="newService.unit"
+                        placeholder="per guest / night"
+                      />
+                    </div>
+                  </div>
+
+                  <UiButton type="submit" variant="brand" class="w-full font-semibold">
+                    <Plus class="size-4" />
+                    Add Service
+                  </UiButton>
+                </form>
+              </UiCardContent>
+            </UiCard>
+
+            <UiCard class="lg:col-span-7">
+              <UiCardHeader>
+                <UiCardTitle>Active Services &amp; Quick Price Update</UiCardTitle>
+              </UiCardHeader>
+              <UiCardContent class="space-y-3">
+                <div
+                  v-for="srv in store.businessServices.value"
+                  :key="srv.id"
+                  class="flex flex-col justify-between gap-3 rounded-2xl border border-border/80 p-4 sm:flex-row sm:items-center"
+                >
+                  <div>
+                    <UiBadge variant="secondary" class="mb-1">{{ srv.category }}</UiBadge>
+                    <p class="text-sm font-semibold">{{ srv.name }}</p>
+                    <p class="text-xs text-muted-foreground">{{ srv.unit }}</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <UiButton variant="outline" size="icon" @click="updatePrice(srv.id, -5)">
+                      -
+                    </UiButton>
+                    <span class="min-w-16 text-center text-sm font-bold">
+                      ${{ srv.priceUsd }}
+                    </span>
+                    <UiButton variant="outline" size="icon" @click="updatePrice(srv.id, 5)">
+                      +
+                    </UiButton>
+                  </div>
+                </div>
+              </UiCardContent>
+            </UiCard>
+          </div>
+        </UiTabsContent>
+
+        <!-- Tab 3: Business Registration & Photos -->
+        <UiTabsContent value="register">
+          <UiCard>
+            <UiCardHeader>
+              <UiCardTitle>Business Registration &amp; Photo Gallery</UiCardTitle>
+              <UiCardDescription>
+                Keep your listing accurate for AI Trip Planner recommendations
+              </UiCardDescription>
+            </UiCardHeader>
+            <UiCardContent>
+              <form class="grid grid-cols-1 gap-6 lg:grid-cols-12" @submit.prevent="submitBusinessProfile">
+                <div class="space-y-4 lg:col-span-7">
+                  <div class="space-y-1.5">
+                    <UiLabel for="biz-name">Business Name</UiLabel>
+                    <UiInput id="biz-name" v-model="bizForm.name" required />
+                  </div>
+
+                  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="space-y-1.5">
+                      <UiLabel>Business Type</UiLabel>
+                      <CommonSearchableSelect
+                        v-model="bizForm.type"
+                        :options="businessTypeOptions"
+                        placeholder="Select type"
+                        search-placeholder="Search business type..."
+                        aria-label="Select business type"
+                      />
+                    </div>
+                    <div class="space-y-1.5">
+                      <UiLabel>Province</UiLabel>
+                      <CommonSearchableSelect
+                        v-model="bizForm.province"
+                        :options="provinceOptions"
+                        placeholder="Select province"
+                        search-placeholder="Search province..."
+                        aria-label="Select province"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <UiLabel for="biz-desc">Description</UiLabel>
+                    <UiTextarea id="biz-desc" v-model="bizForm.description" />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <UiLabel for="biz-photo">Cover Photo URL</UiLabel>
+                    <UiInput id="biz-photo" v-model="bizForm.photoUrl" />
+                  </div>
+
+                  <div class="flex items-center gap-3">
+                    <UiButton type="submit" variant="brand" class="font-semibold">
+                      Save Business Profile
+                    </UiButton>
+                    <span v-if="bizSavedNotice" class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                      <TrendingUp class="size-3.5" />
+                      Profile updated!
+                    </span>
+                  </div>
+                </div>
+
+                <div class="lg:col-span-5">
+                  <UiLabel class="mb-2 block">Live Card Preview</UiLabel>
+                  <div class="overflow-hidden rounded-2xl border border-border">
+                    <img
+                      :src="bizForm.photoUrl"
+                      :alt="bizForm.name"
+                      class="h-48 w-full object-cover"
+                    />
+                    <div class="p-4">
+                      <div class="flex items-center gap-2">
+                        <UiBadge variant="brand">{{ bizForm.type }}</UiBadge>
+                        <span class="text-xs text-muted-foreground">{{ bizForm.province }}, Cambodia</span>
+                      </div>
+                      <p class="mt-2 font-bold">{{ bizForm.name }}</p>
+                      <p class="mt-1 text-xs text-muted-foreground">
+                        {{ bizForm.description }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </UiCardContent>
+          </UiCard>
+        </UiTabsContent>
+      </UiTabs>
     </main>
 
     <LayoutAppFooter />

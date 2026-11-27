@@ -23,15 +23,43 @@ const route = useRoute()
 const store = useTourismStore()
 
 const searchQuery = ref(String(route.query.q ?? ''))
-const selectedProvince = ref(String(route.query.province ?? ''))
+const selectedProvince = ref(String(route.query.province || 'all'))
 const selectedCategory = ref<DestinationCategory>('All')
 const selectedTags = ref<VibeTag[]>([])
 const budgetFilter = ref<'any' | 'free' | 'under15' | 'under40'>('any')
-const minRating = ref<number>(0)
-const maxDistanceKm = ref<number>(0)
+const minRating = ref<string>('0')
+const maxDistanceKm = ref<string>('0')
 const sortBy = ref<'popularity' | 'rating' | 'price' | 'distance'>('popularity')
 const viewMode = ref<'grid' | 'map'>('grid')
 const selectedMapId = ref<string>('angkor-wat')
+
+const provinceOptions = [
+  { label: 'All Provinces', value: 'all' },
+  ...CAMBODIA_PROVINCES.map((p) => ({ label: p, value: p })),
+]
+const budgetOptions = [
+  { label: 'Any Budget', value: 'any' },
+  { label: 'Free Entry', value: 'free' },
+  { label: 'Under $15', value: 'under15' },
+  { label: 'Under $40', value: 'under40' },
+]
+const ratingOptions = [
+  { label: 'Any Rating', value: '0' },
+  { label: '4.6+ Stars', value: '4.6' },
+  { label: '4.8+ Stars', value: '4.8' },
+]
+const distanceOptions = [
+  { label: 'Any Distance', value: '0' },
+  { label: 'Within 10 km', value: '10' },
+  { label: 'Within 30 km', value: '30' },
+  { label: 'Within 50 km', value: '50' },
+]
+const sortOptions = [
+  { label: 'Sort: Most Popular', value: 'popularity' },
+  { label: 'Sort: Highest Rated', value: 'rating' },
+  { label: 'Sort: Lowest Ticket Price', value: 'price' },
+  { label: 'Sort: Nearest', value: 'distance' },
+]
 
 function toggleTag(tag: VibeTag) {
   if (selectedTags.value.includes(tag)) {
@@ -43,17 +71,19 @@ function toggleTag(tag: VibeTag) {
 
 function resetAll() {
   searchQuery.value = ''
-  selectedProvince.value = ''
+  selectedProvince.value = 'all'
   selectedCategory.value = 'All'
   selectedTags.value = []
   budgetFilter.value = 'any'
-  minRating.value = 0
-  maxDistanceKm.value = 0
+  minRating.value = '0'
+  maxDistanceKm.value = '0'
   sortBy.value = 'popularity'
 }
 
 const filteredAttractions = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
+  const minRatingNum = Number(minRating.value)
+  const maxDistanceNum = Number(maxDistanceKm.value)
 
   const list = store.attractions.value.filter((item) => {
     const matchesQuery =
@@ -64,7 +94,7 @@ const filteredAttractions = computed(() => {
       item.description.toLowerCase().includes(q)
 
     const matchesProvince =
-      !selectedProvince.value || item.province === selectedProvince.value
+      selectedProvince.value === 'all' || item.province === selectedProvince.value
 
     const matchesCategory =
       selectedCategory.value === 'All' || item.category === selectedCategory.value
@@ -79,9 +109,9 @@ const filteredAttractions = computed(() => {
       (budgetFilter.value === 'under15' && item.ticketPriceUsd <= 15) ||
       (budgetFilter.value === 'under40' && item.ticketPriceUsd <= 40)
 
-    const matchesRating = item.rating >= minRating.value
+    const matchesRating = item.rating >= minRatingNum
     const matchesDistance =
-      maxDistanceKm.value === 0 || item.distanceFromCenterKm <= maxDistanceKm.value
+      maxDistanceNum === 0 || item.distanceFromCenterKm <= maxDistanceNum
 
     return (
       matchesQuery &&
@@ -179,51 +209,40 @@ const filteredAttractions = computed(() => {
             </div>
 
             <!-- Province -->
-            <select
+            <CommonSearchableSelect
               v-model="selectedProvince"
+              :options="provinceOptions"
+              placeholder="All Provinces"
+              search-placeholder="Search province..."
               aria-label="Filter by province"
-              class="h-10 rounded-xl border border-input bg-background px-3 text-sm font-medium outline-none focus:border-ring"
-            >
-              <option value="">All Provinces</option>
-              <option v-for="p in CAMBODIA_PROVINCES" :key="p" :value="p">
-                {{ p }}
-              </option>
-            </select>
+            />
 
             <!-- Budget -->
-            <select
+            <CommonSearchableSelect
               v-model="budgetFilter"
+              :options="budgetOptions"
+              placeholder="Any Budget"
+              search-placeholder="Search budget..."
               aria-label="Filter by budget"
-              class="h-10 rounded-xl border border-input bg-background px-3 text-sm font-medium outline-none focus:border-ring"
-            >
-              <option value="any">Any Budget</option>
-              <option value="free">Free Entry</option>
-              <option value="under15">Under $15</option>
-              <option value="under40">Under $40</option>
-            </select>
+            />
 
             <!-- Min Rating -->
-            <select
-              v-model.number="minRating"
+            <CommonSearchableSelect
+              v-model="minRating"
+              :options="ratingOptions"
+              placeholder="Any Rating"
+              search-placeholder="Search rating..."
               aria-label="Filter by minimum rating"
-              class="h-10 rounded-xl border border-input bg-background px-3 text-sm font-medium outline-none focus:border-ring"
-            >
-              <option :value="0">Any Rating</option>
-              <option :value="4.6">4.6+ Stars</option>
-              <option :value="4.8">4.8+ Stars</option>
-            </select>
+            />
 
             <!-- Max Distance -->
-            <select
-              v-model.number="maxDistanceKm"
+            <CommonSearchableSelect
+              v-model="maxDistanceKm"
+              :options="distanceOptions"
+              placeholder="Any Distance"
+              search-placeholder="Search distance..."
               aria-label="Filter by distance"
-              class="h-10 rounded-xl border border-input bg-background px-3 text-sm font-medium outline-none focus:border-ring"
-            >
-              <option :value="0">Any Distance</option>
-              <option :value="10">Within 10 km</option>
-              <option :value="30">Within 30 km</option>
-              <option :value="50">Within 50 km</option>
-            </select>
+            />
           </div>
 
           <!-- Category Pills & Sort -->
@@ -242,16 +261,16 @@ const filteredAttractions = computed(() => {
 
             <div class="flex items-center gap-2">
               <SlidersHorizontal class="size-4 text-muted-foreground" />
-              <select
-                v-model="sortBy"
-                aria-label="Sort attractions"
-                class="h-9 rounded-full border border-input bg-background px-3.5 text-xs font-semibold outline-none"
-              >
-                <option value="popularity">Sort: Most Popular</option>
-                <option value="rating">Sort: Highest Rated</option>
-                <option value="price">Sort: Lowest Ticket Price</option>
-                <option value="distance">Sort: Nearest</option>
-              </select>
+              <div class="w-[190px]">
+                <CommonSearchableSelect
+                  v-model="sortBy"
+                  :options="sortOptions"
+                  placeholder="Sort by"
+                  search-placeholder="Search sort..."
+                  aria-label="Sort attractions"
+                  trigger-class="h-9 rounded-full text-xs font-semibold"
+                />
+              </div>
 
               <UiButton variant="ghost" size="sm" @click="resetAll">
                 <RotateCcw class="size-3.5" />

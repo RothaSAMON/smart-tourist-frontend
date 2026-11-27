@@ -46,11 +46,11 @@ async function handleLogin() {
           alt="Angkor Wat Cambodia"
           class="h-[520px] w-full object-cover opacity-85"
         />
-        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent p-8 flex flex-col justify-end text-white">
-          <span class="inline-flex w-fit items-center gap-2 rounded-full bg-brand-lime px-3 py-1 text-xs font-bold text-brand-lime-foreground">
+        <div class="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/25 to-transparent p-8 text-white">
+          <UiBadge variant="brand" class="w-fit font-bold">
             <Compass class="size-3.5" />
             RokMerl
-          </span>
+          </UiBadge>
           <h2 class="mt-3 text-2xl font-bold leading-snug">
             Save favorites, build AI itineraries, or manage your local tourism business.
           </h2>
@@ -69,45 +69,38 @@ async function handleLogin() {
 
           <UiCardContent>
             <form class="space-y-4" @submit.prevent="handleLogin">
-              <!-- Demo Role Switcher -->
-              <div>
-                <label class="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                  Account Type
-                </label>
-                <div class="grid grid-cols-3 gap-2">
-                  <button
-                    v-for="item in [
-                      { id: 'tourist', label: 'Tourist' },
-                      { id: 'business', label: 'Business' },
-                      { id: 'admin', label: 'Admin' },
-                    ]"
-                    :key="item.id"
-                    type="button"
-                    class="rounded-xl border px-3 py-2 text-xs font-semibold transition-colors"
-                    :class="
-                      role === item.id
-                        ? 'border-transparent bg-brand-lime text-brand-lime-foreground'
-                        : 'border-border bg-background hover:bg-muted'
-                    "
-                    @click="role = item.id as UserRole"
-                  >
-                    {{ item.label }}
-                  </button>
-                </div>
+              <!-- Demo Role Switcher with shadcn-vue Tabs -->
+              <div class="space-y-1.5">
+                <UiLabel>Account Type</UiLabel>
+                <UiTabs v-model="role">
+                  <UiTabsList class="grid w-full grid-cols-3">
+                    <UiTabsTrigger value="tourist">Tourist</UiTabsTrigger>
+                    <UiTabsTrigger value="business">Business</UiTabsTrigger>
+                    <UiTabsTrigger value="admin">Admin</UiTabsTrigger>
+                  </UiTabsList>
+                </UiTabs>
               </div>
 
-              <div>
-                <label class="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                  Email Address
-                </label>
-                <UiInput v-model="email" type="email" required placeholder="you@example.com" />
+              <div class="space-y-1.5">
+                <UiLabel for="login-email">Email Address</UiLabel>
+                <UiInput
+                  id="login-email"
+                  v-model="email"
+                  type="email"
+                  required
+                  placeholder="you@example.com"
+                />
               </div>
 
-              <div>
-                <label class="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                  Password
-                </label>
-                <UiInput v-model="password" type="password" required placeholder="••••••••" />
+              <div class="space-y-1.5">
+                <UiLabel for="login-password">Password</UiLabel>
+                <UiInput
+                  id="login-password"
+                  v-model="password"
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                />
               </div>
 
               <UiButton type="submit" variant="brand" size="lg" class="w-full font-semibold">
@@ -115,7 +108,9 @@ async function handleLogin() {
               </UiButton>
             </form>
 
-            <p class="mt-5 text-center text-xs text-muted-foreground">
+            <UiSeparator class="my-5" />
+
+            <p class="text-center text-xs text-muted-foreground">
               New to RokMerl?
               <NuxtLink to="/auth/register" class="font-semibold text-foreground underline underline-offset-4">
                 Create an account

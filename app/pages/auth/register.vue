@@ -45,54 +45,48 @@ async function handleRegister() {
 
         <UiCardContent>
           <form class="space-y-4" @submit.prevent="handleRegister">
-            <div class="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                class="rounded-xl border px-3 py-2.5 text-left transition-colors"
-                :class="
+            <div class="space-y-1.5">
+              <UiLabel>Register As</UiLabel>
+              <UiTabs v-model="role">
+                <UiTabsList class="grid w-full grid-cols-2">
+                  <UiTabsTrigger value="tourist">Tourist</UiTabsTrigger>
+                  <UiTabsTrigger value="business">Business Owner</UiTabsTrigger>
+                </UiTabsList>
+              </UiTabs>
+              <p class="text-[11px] text-muted-foreground">
+                {{
                   role === 'tourist'
-                    ? 'border-transparent bg-brand-lime text-brand-lime-foreground'
-                    : 'border-border hover:bg-muted'
-                "
-                @click="role = 'tourist'"
-              >
-                <p class="text-xs font-bold">Tourist</p>
-                <p class="text-[11px] opacity-80">Explore, save &amp; plan trips</p>
-              </button>
-              <button
-                type="button"
-                class="rounded-xl border px-3 py-2.5 text-left transition-colors"
-                :class="
-                  role === 'business'
-                    ? 'border-transparent bg-brand-lime text-brand-lime-foreground'
-                    : 'border-border hover:bg-muted'
-                "
-                @click="role = 'business'"
-              >
-                <p class="text-xs font-bold">Business Owner</p>
-                <p class="text-[11px] opacity-80">Hotels, food, tours &amp; transport</p>
-              </button>
+                    ? 'Explore attractions, save favorites, and build personalized AI itineraries.'
+                    : 'List your restaurant, hotel, cafe, homestay, tour guide, or transport service.'
+                }}
+              </p>
             </div>
 
-            <div>
-              <label class="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                Full Name
-              </label>
-              <UiInput v-model="name" required placeholder="e.g. Dara Chan" />
+            <div class="space-y-1.5">
+              <UiLabel for="reg-name">Full Name</UiLabel>
+              <UiInput id="reg-name" v-model="name" required placeholder="e.g. Dara Chan" />
             </div>
 
-            <div>
-              <label class="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                Email Address
-              </label>
-              <UiInput v-model="email" type="email" required placeholder="you@example.com" />
+            <div class="space-y-1.5">
+              <UiLabel for="reg-email">Email Address</UiLabel>
+              <UiInput
+                id="reg-email"
+                v-model="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+              />
             </div>
 
-            <div>
-              <label class="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                Password
-              </label>
-              <UiInput v-model="password" type="password" required placeholder="Create a password" />
+            <div class="space-y-1.5">
+              <UiLabel for="reg-password">Password</UiLabel>
+              <UiInput
+                id="reg-password"
+                v-model="password"
+                type="password"
+                required
+                placeholder="Create a password"
+              />
             </div>
 
             <UiButton type="submit" variant="brand" size="lg" class="w-full font-semibold">
@@ -100,7 +94,9 @@ async function handleRegister() {
             </UiButton>
           </form>
 
-          <p class="mt-5 text-center text-xs text-muted-foreground">
+          <UiSeparator class="my-5" />
+
+          <p class="text-center text-xs text-muted-foreground">
             Already have an account?
             <NuxtLink to="/auth/login" class="font-semibold text-foreground underline underline-offset-4">
               Log in
