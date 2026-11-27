@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Compass } from '@lucide/vue'
-import type { UserRole } from '@/types/tourism'
+import { AlertCircle, Compass, Eye, EyeOff, Loader2 } from '@lucide/vue'
 
 definePageMeta({
   alias: ['/login'],
@@ -11,25 +10,34 @@ useHead({
   title: 'Log in — RokMerl',
 })
 
-const store = useTourismStore()
+const { login, resolveRedirectPath, extractError } = useAuth()
 
-const email = ref('sophea@rokmerl.kh')
-const password = ref('••••••••')
-const role = ref<UserRole>('tourist')
+const email = ref('')
+const password = ref('')
+const showPassword = ref(false)
+const isSubmitting = ref(false)
+const errorMessage = ref('')
+const fieldErrors = ref<Record<string, string>>({})
 
 async function handleLogin() {
-  const defaultNames: Record<UserRole, string> = {
-    tourist: 'Sophea Kem',
-    business: 'Vanna Sok',
-    admin: 'Admin RokMerl',
-  }
-  store.loginMock(defaultNames[role.value], email.value, role.value)
-  if (role.value === 'business') {
-    await navigateTo('/business')
-  } else if (role.value === 'admin') {
-    await navigateTo('/admin')
-  } else {
-    await navigateTo('/profile')
+  if (isSubmitting.value) return
+
+  errorMessage.value = ''
+  fieldErrors.value = {}
+  isSubmitting.value = true
+
+  try {
+    const response = await login({
+      email: email.value,
+      password: password.value,
+    })
+    await navigateTo(resolveRedirectPath(response.data))
+  } catch (err) {
+    const parsed = extractError(err)
+    errorMessage.value = parsed.message
+    fieldErrors.value = parsed.fieldErrors
+  } finally {
+    isSubmitting.value = false
   }
 }
 </script>
@@ -63,48 +71,75 @@ async function handleLogin() {
           <UiCardHeader>
             <UiCardTitle class="text-2xl">Welcome back</UiCardTitle>
             <UiCardDescription>
-              Sign in to your RokMerl account (demo mode — ready for Laravel API)
+              Sign in with your email and password to continue to RokMerl.
             </UiCardDescription>
           </UiCardHeader>
 
           <UiCardContent>
-            <form class="space-y-4" @submit.prevent="handleLogin">
-              <!-- Demo Role Switcher with shadcn-vue Tabs -->
-              <div class="space-y-1.5">
-                <UiLabel>Account Type</UiLabel>
-                <UiTabs v-model="role">
-                  <UiTabsList class="grid w-full grid-cols-3">
-                    <UiTabsTrigger value="tourist">Tourist</UiTabsTrigger>
-                    <UiTabsTrigger value="business">Business</UiTabsTrigger>
-                    <UiTabsTrigger value="admin">Admin</UiTabsTrigger>
-                  </UiTabsList>
-                </UiTabs>
-              </div>
+            <!-- Error Alert -->
+            <div
+              v-if="errorMessage"
+              role="alert"
+              class="mb-4 flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 px-3.5 py-3 text-xs font-medium text-destructive"
+            >
+              <AlertCircle class="mt-0.5 size-4 shrink-0" />
+              <span>{{ errorMessage }}</span>
+            </div>
 
+            <form class="space-y-4" @submit.prevent="handleLogin">
               <div class="space-y-1.5">
                 <UiLabel for="login-email">Email Address</UiLabel>
                 <UiInput
                   id="login-email"
                   v-model="email"
                   type="email"
+                  autocomplete="email"
                   required
-                  placeholder="you@example.com"
+                  :disabled="isSubmitting"
+                  placeholder="test@three.com"
                 />
+                <p v-if="fieldErrors.email" class="text-xs text-destructive">
+                  {{ fieldErrors.email }}
+                </p>
               </div>
 
               <div class="space-y-1.5">
                 <UiLabel for="login-password">Password</UiLabel>
-                <UiInput
-                  id="login-password"
-                  v-model="password"
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                />
+                <div class="relative">
+                  <UiInput
+                    id="login-password"
+                    v-model="password"
+                    :type="showPassword ? 'text' : 'password'"
+                    autocomplete="current-password"
+                    required
+                    :disabled="isSubmitting"
+                    placeholder="Enter your password"
+                    class="pr-10"
+                  />
+                  <button
+                    type="button"
+                    class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                    :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                    @click="showPassword = !showPassword"
+                  >
+                    <EyeOff v-if="showPassword" class="size-4" />
+                    <Eye v-else class="size-4" />
+                  </button>
+                </div>
+                <p v-if="fieldErrors.password" class="text-xs text-destructive">
+                  {{ fieldErrors.password }}
+                </p>
               </div>
 
-              <UiButton type="submit" variant="brand" size="lg" class="w-full font-semibold">
-                Log in as {{ role }}
+              <UiButton
+                type="submit"
+                variant="brand"
+                size="lg"
+                class="w-full font-semibold"
+                :disabled="isSubmitting"
+              >
+                <Loader2 v-if="isSubmitting" class="size-4 animate-spin" />
+                {{ isSubmitting ? 'Signing in...' : 'Log in' }}
               </UiButton>
             </form>
 

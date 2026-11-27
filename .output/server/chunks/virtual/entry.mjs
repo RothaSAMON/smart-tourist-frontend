@@ -749,6 +749,7 @@ var _showErrorUnlessCrawler = async (nuxtApp, error) => {
 };
 // virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Ffetch.mjs
 if (!globalThis.$fetch) globalThis.$fetch = $fetch.create({ baseURL: baseURL() });
+var $fetch$1 = globalThis.$fetch;
 // virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Fglobal-polyfills.mjs
 if (!("global" in globalThis)) globalThis.global = globalThis;
 // node_modules/nuxt/dist/head/runtime/island-head.js
@@ -950,48 +951,48 @@ var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default = [
 		name: "auth-login",
 		path: "/auth/login",
 		alias: ["/login"],
-		component: () => import('../build/login-BhYZTOVK.mjs')
+		component: () => import('../build/login-D_Es-31R.mjs')
 	},
 	{
 		name: "auth-register",
 		path: "/auth/register",
 		alias: ["/register"],
-		component: () => import('../build/register-D-coFSlD.mjs')
+		component: () => import('../build/register-g_4Kw2Dx.mjs')
 	},
 	{
 		name: "attractions-id",
 		path: "/attractions/:id()",
-		component: () => import('../build/_id_-x1AdNJxA.mjs')
+		component: () => import('../build/_id_-BnifCw33.mjs')
 	},
 	{
 		name: "admin",
 		path: "/admin",
-		component: () => import('../build/admin-DeVrebBd.mjs')
+		component: () => import('../build/admin-CBeG-4p1.mjs')
 	},
 	{
 		name: "business",
 		path: "/business",
-		component: () => import('../build/business-CH_nIN2x.mjs')
+		component: () => import('../build/business-h9CLguTi.mjs')
 	},
 	{
 		name: "explore",
 		path: "/explore",
-		component: () => import('../build/explore-DZUg38C6.mjs')
+		component: () => import('../build/explore-YILjDQ7i.mjs')
 	},
 	{
 		name: "planner",
 		path: "/planner",
-		component: () => import('../build/planner-CZgrYfuN.mjs')
+		component: () => import('../build/planner-yO3qZikJ.mjs')
 	},
 	{
 		name: "profile",
 		path: "/profile",
-		component: () => import('../build/profile-BQ-l3ZJG.mjs')
+		component: () => import('../build/profile-CXs1jqsS.mjs')
 	},
 	{
 		name: "index",
 		path: "/",
-		component: () => import('../build/pages-tVUbilVm.mjs')
+		component: () => import('../build/pages-n67FApdQ.mjs')
 	}
 ];
 // node_modules/nuxt/dist/pages/runtime/plugins/router.js
@@ -1398,7 +1399,7 @@ var _sfc_main$1 = {
 		const statusText = _error.statusMessage ?? (is404 ? "Page Not Found" : "Internal Server Error");
 		const description = _error.message || _error.toString();
 		const stack = void 0;
-		const _Error404 = defineAsyncComponent(() => import('../build/error-404-B_JlzWin.mjs'));
+		const _Error404 = defineAsyncComponent(() => import('../build/error-404-BBJ2xPK9.mjs'));
 		const _Error = defineAsyncComponent(() => import('../build/error-500-C9lLv-V6.mjs'));
 		const ErrorTemplate = is404 ? _Error404 : _Error;
 		return (_ctx, _push, _parent, _attrs) => {
@@ -1498,5 +1499,5 @@ const entry = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 	default: entry_default
 }, Symbol.toStringTag, { value: 'Module' }));
 
-export { _plugin_vue_export_helper_default as _, useRoute$1 as a, useNuxtApp as b, useRouter as c, sanitizeAnchorHref as d, encodeRoutePath as e, isRootedPath as f, useRuntimeConfig as g, nuxtLinkDefaults as h, isAbsoluteHref as i, entry as j, navigateTo as n, resolveRouteObject as r, stateDiagnostics as s, tryUseNuxtApp as t, useHead as u, vforBound as v };
+export { $fetch$1 as $, _plugin_vue_export_helper_default as _, useRoute$1 as a, useRuntimeConfig as b, useNuxtApp as c, useRouter as d, encodeRoutePath as e, sanitizeAnchorHref as f, isRootedPath as g, nuxtLinkDefaults as h, isAbsoluteHref as i, entry as j, navigateTo as n, resolveRouteObject as r, stateDiagnostics as s, tryUseNuxtApp as t, useHead as u, vforBound as v };
 //# sourceMappingURL=entry.mjs.map

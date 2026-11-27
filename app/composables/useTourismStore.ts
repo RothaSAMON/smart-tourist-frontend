@@ -7,6 +7,7 @@ import {
   INITIAL_SAVED_PLANS,
   RECOMMENDED_ATTRACTIONS,
 } from '@/data/home'
+import type { AuthUser } from '@/types/auth'
 import type {
   AdminBusinessRecord,
   AdminReportRecord,
@@ -18,10 +19,16 @@ import type {
   UserRole,
 } from '@/types/tourism'
 
+export const DEFAULT_PROFILE_IMAGE = '/icons/profile.png'
+
 export interface MockUser {
+  id?: number
   name: string
   email: string
+  phone?: string | null
+  status?: string
   role: UserRole
+  roles?: string[]
   avatarUrl: string
 }
 
@@ -40,13 +47,13 @@ export function useTourismStore() {
   const savedPlans = useState<SavedTripPlan[]>('rokmerl-saved-plans', () => [
     ...INITIAL_SAVED_PLANS,
   ])
-  const currentUser = useState<MockUser | null>('rokmerl-user', () => ({
-    name: 'Sophea Kem',
-    email: 'sophea@rokmerl.kh',
-    role: 'tourist',
-    avatarUrl:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=96&q=80',
-  }))
+  const userCookie = useCookie<AuthUser | null>('auth_user', {
+    sameSite: 'lax',
+    default: () => null,
+  })
+  const currentUser = useState<MockUser | null>('rokmerl-user', () =>
+    userCookie.value ? mapAuthUserToStoreUser(userCookie.value) : null,
+  )
 
   // Business portal mock state
   const businessServices = useState<BusinessService[]>(
@@ -98,9 +105,7 @@ export function useTourismStore() {
       id: `rev-${Date.now()}`,
       attractionId: payload.attractionId,
       author: currentUser.value?.name ?? 'Guest Traveler',
-      avatarUrl:
-        currentUser.value?.avatarUrl ??
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=96&q=80',
+      avatarUrl: currentUser.value?.avatarUrl || DEFAULT_PROFILE_IMAGE,
       rating: payload.rating,
       date: 'Just now',
       comment: payload.comment,
@@ -118,18 +123,49 @@ export function useTourismStore() {
     savedPlans.value = savedPlans.value.filter((plan) => plan.id !== id)
   }
 
+  function mapAuthUserToStoreUser(user: AuthUser): MockUser {
+    const normalizedType = user.user_type?.toLowerCase()
+    const normalizedRoles = (user.roles ?? []).map((r) => r.toLowerCase())
+    let role: UserRole = 'tourist'
+    if (normalizedType === 'admin' || normalizedRoles.includes('admin')) {
+      role = 'admin'
+    } else if (
+      normalizedType === 'business' ||
+      normalizedRoles.includes('business')
+    ) {
+      role = 'business'
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      status: user.status,
+      role,
+      roles: user.roles,
+      avatarUrl: user.avatarUrl || DEFAULT_PROFILE_IMAGE,
+    }
+  }
+
+  function setAuthUser(user: AuthUser) {
+    currentUser.value = mapAuthUserToStoreUser(user)
+  }
+
   function loginMock(name: string, email: string, role: UserRole) {
     currentUser.value = {
       name: name.trim() || 'RokMerl Traveler',
       email: email.trim() || 'traveler@rokmerl.kh',
       role,
-      avatarUrl:
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=96&q=80',
+      avatarUrl: DEFAULT_PROFILE_IMAGE,
     }
   }
 
   function logoutMock() {
     currentUser.value = null
+    useCookie<string | null>('access_token').value = null
+    useCookie<string | null>('token_type').value = null
+    useCookie<AuthUser | null>('auth_user').value = null
   }
 
   return {
@@ -149,6 +185,7 @@ export function useTourismStore() {
     addReview,
     saveTripPlan,
     removeTripPlan,
+    setAuthUser,
     loginMock,
     logoutMock,
   }

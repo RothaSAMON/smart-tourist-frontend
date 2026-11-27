@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
   Calendar,
   Heart,
   LogOut,
+  Mail,
   MapPin,
+  Phone,
+  ShieldCheck,
   Sparkles,
   Star,
   Trash2,
@@ -15,7 +18,43 @@ useHead({
 })
 
 const store = useTourismStore()
+const { user: authUser, isAuthenticated, fetchMe, logout } = useAuth()
 const activeTab = ref<'favorites' | 'plans' | 'reviews'>('favorites')
+const isLoadingProfile = ref(false)
+
+const profile = computed(() => {
+  if (authUser.value) {
+    return {
+      id: authUser.value.id,
+      name: authUser.value.name,
+      email: authUser.value.email,
+      phone: authUser.value.phone,
+      status: authUser.value.status,
+      roles: authUser.value.roles ?? [],
+      avatarUrl: authUser.value.avatarUrl || '/icons/profile.png',
+    }
+  }
+  if (store.currentUser.value) {
+    return {
+      id: store.currentUser.value.id,
+      name: store.currentUser.value.name,
+      email: store.currentUser.value.email,
+      phone: store.currentUser.value.phone,
+      status: store.currentUser.value.status,
+      roles: store.currentUser.value.roles ?? [store.currentUser.value.role],
+      avatarUrl: store.currentUser.value.avatarUrl || '/icons/profile.png',
+    }
+  }
+  return null
+})
+
+onMounted(async () => {
+  if (isAuthenticated.value) {
+    isLoadingProfile.value = true
+    await fetchMe()
+    isLoadingProfile.value = false
+  }
+})
 
 const favoriteAttractions = computed(() =>
   store.attractions.value.filter((item) => store.isFavorite(item.id)),
@@ -28,7 +67,7 @@ const recommendedForYou = computed(() =>
 )
 
 async function handleLogout() {
-  store.logoutMock()
+  logout()
   await navigateTo('/auth/login')
 }
 </script>
@@ -39,53 +78,114 @@ async function handleLogout() {
 
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <!-- Profile Header -->
-      <div
-        class="flex flex-col justify-between gap-6 rounded-3xl bg-surface-sky p-6 sm:flex-row sm:items-center sm:p-8"
-      >
-        <div class="flex items-center gap-4">
-          <UiAvatar class="size-16 border-2 border-white shadow-md">
-            <UiAvatarImage
-              :src="
-                store.currentUser.value?.avatarUrl ??
-                'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=96&q=80'
-              "
-              alt="Tourist avatar"
-            />
-            <UiAvatarFallback>RM</UiAvatarFallback>
-          </UiAvatar>
-          <div>
-            <UiBadge variant="brand" class="mb-1.5 font-semibold">
-              Tourist Account
-            </UiBadge>
-            <h1 class="text-2xl font-bold tracking-tight">
-              {{ store.currentUser.value?.name ?? 'Guest Traveler' }}
-            </h1>
-            <p class="text-sm text-muted-foreground">
-              {{ store.currentUser.value?.email ?? 'Sign in to sync your Cambodia plans' }}
-            </p>
+      <div class="rounded-3xl bg-surface-sky p-6 sm:p-8">
+        <div class="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+          <div class="flex items-center gap-4">
+            <UiAvatar class="size-16 border-2 border-white shadow-md">
+              <UiAvatarImage
+                :src="profile?.avatarUrl || '/icons/profile.png'"
+                :alt="profile?.name || 'User avatar'"
+              />
+              <UiAvatarFallback>
+                {{ (profile?.name || 'RM').slice(0, 2).toUpperCase() }}
+              </UiAvatarFallback>
+            </UiAvatar>
+            <div>
+              <div class="mb-1.5 flex flex-wrap items-center gap-1.5">
+                <UiBadge
+                  v-for="roleName in profile?.roles?.length ? profile.roles : ['Guest']"
+                  :key="roleName"
+                  variant="brand"
+                  class="font-semibold"
+                >
+                  {{ roleName }}
+                </UiBadge>
+                <UiBadge
+                  v-if="profile?.status"
+                  variant="outline"
+                  class="gap-1.5 bg-white/80 capitalize"
+                >
+                  <span
+                    class="size-2 rounded-full"
+                    :class="
+                      profile.status.toLowerCase() === 'active'
+                        ? 'bg-emerald-500'
+                        : 'bg-amber-500'
+                    "
+                  />
+                  {{ profile.status }}
+                </UiBadge>
+              </div>
+              <h1 class="text-2xl font-bold tracking-tight">
+                {{ profile?.name ?? 'Guest Traveler' }}
+              </h1>
+              <p class="text-sm text-muted-foreground">
+                {{ profile?.email ?? 'Sign in to view your account details and sync your Cambodia plans' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <NuxtLink to="/planner">
+              <UiButton variant="brand" size="sm" class="font-semibold">
+                <Sparkles class="size-4" />
+                New AI Trip Plan
+              </UiButton>
+            </NuxtLink>
+            <UiButton
+              v-if="profile"
+              variant="outline"
+              size="sm"
+              @click="handleLogout"
+            >
+              <LogOut class="size-4" />
+              Log out
+            </UiButton>
+            <NuxtLink v-else to="/auth/login">
+              <UiButton variant="outline" size="sm">Log in</UiButton>
+            </NuxtLink>
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2.5">
-          <NuxtLink to="/planner">
-            <UiButton variant="brand" size="sm" class="font-semibold">
-              <Sparkles class="size-4" />
-              New AI Trip Plan
-            </UiButton>
-          </NuxtLink>
-          <UiButton
-            v-if="store.currentUser.value"
-            variant="outline"
-            size="sm"
-            @click="handleLogout"
-          >
-            <LogOut class="size-4" />
-            Log out
-          </UiButton>
-          <NuxtLink v-else to="/auth/login">
-            <UiButton variant="outline" size="sm">Log in</UiButton>
-          </NuxtLink>
+        <!-- Account Information Strip from /me & /auth/login -->
+        <div
+          v-if="profile"
+          class="mt-6 grid grid-cols-1 gap-3 border-t border-slate-200/80 pt-5 sm:grid-cols-3"
+        >
+          <div class="flex items-center gap-3 rounded-2xl bg-white/85 px-4 py-3">
+            <Mail class="size-4 shrink-0 text-muted-foreground" />
+            <div class="min-w-0">
+              <p class="text-[11px] font-medium text-muted-foreground">Email</p>
+              <p class="truncate text-sm font-semibold text-foreground">
+                {{ profile.email }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 rounded-2xl bg-white/85 px-4 py-3">
+            <Phone class="size-4 shrink-0 text-muted-foreground" />
+            <div class="min-w-0">
+              <p class="text-[11px] font-medium text-muted-foreground">Phone</p>
+              <p class="truncate text-sm font-semibold text-foreground">
+                {{ profile.phone || 'Not provided' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 rounded-2xl bg-white/85 px-4 py-3">
+            <ShieldCheck class="size-4 shrink-0 text-muted-foreground" />
+            <div class="min-w-0">
+              <p class="text-[11px] font-medium text-muted-foreground">Status &amp; Roles</p>
+              <p class="truncate text-sm font-semibold capitalize text-foreground">
+                {{ profile.status || 'active' }} · {{ profile.roles.join(', ') || 'User' }}
+              </p>
+            </div>
+          </div>
         </div>
+
+        <p v-if="isLoadingProfile" class="mt-3 text-xs text-muted-foreground">
+          Syncing latest profile from server...
+        </p>
       </div>
 
       <!-- shadcn-vue Tabs -->
