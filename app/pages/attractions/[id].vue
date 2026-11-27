@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import {
+  AlertCircle,
   ArrowLeft,
   Clock,
   CloudSun,
@@ -9,18 +10,59 @@ import {
   Hotel,
   MapPin,
   Play,
+  RefreshCw,
   Sparkles,
   Star,
   Ticket,
   Utensils,
 } from '@lucide/vue'
+import type { DestinationAttraction } from '@/types/tourism'
 
 const route = useRoute()
 const store = useTourismStore()
+const { fetchAttractionById } = useAttractionsApi()
 
-const attraction = computed(() =>
-  store.getAttractionById(String(route.params.id ?? '')),
-)
+const attractionId = computed(() => String(route.params.id ?? ''))
+const apiAttraction = ref<DestinationAttraction | null>(null)
+const isLoading = ref(false)
+const loadError = ref('')
+
+const attraction = computed(() => {
+  return apiAttraction.value ?? store.getAttractionById(attractionId.value)
+})
+
+async function loadAttraction(id: string) {
+  if (!id) return
+  // Fetch from Laravel API for numeric IDs (or whenever not found in local fixed data)
+  const isNumericId = /^\d+$/.test(id)
+  if (!isNumericId && store.getAttractionById(id)) {
+    apiAttraction.value = null
+    loadError.value = ''
+    return
+  }
+
+  isLoading.value = true
+  loadError.value = ''
+  try {
+    apiAttraction.value = await fetchAttractionById(id)
+  } catch (err) {
+    const fetchErr = err as { data?: { message?: string }; message?: string }
+    loadError.value =
+      fetchErr?.data?.message ||
+      fetchErr?.message ||
+      'Unable to load attraction details.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadAttraction(attractionId.value)
+})
+
+watch(attractionId, (nextId) => {
+  loadAttraction(nextId)
+})
 
 useHead(() => ({
   title: attraction.value
@@ -70,7 +112,36 @@ function submitReview() {
   <div class="min-h-screen bg-background text-foreground">
     <LayoutAppNavbar variant="solid" />
 
-    <main v-if="attraction" class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <!-- Loading State -->
+    <main v-if="isLoading" class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div class="h-8 w-40 animate-pulse rounded-lg bg-muted" />
+      <div class="mt-6 h-[420px] w-full animate-pulse rounded-3xl bg-muted" />
+      <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div class="h-64 animate-pulse rounded-2xl bg-muted lg:col-span-8" />
+        <div class="h-64 animate-pulse rounded-2xl bg-muted lg:col-span-4" />
+      </div>
+    </main>
+
+    <!-- Error State -->
+    <main
+      v-else-if="loadError && !attraction"
+      class="mx-auto max-w-xl px-4 py-24 text-center"
+    >
+      <AlertCircle class="mx-auto size-10 text-destructive" />
+      <h1 class="mt-3 text-xl font-bold">Failed to Load Attraction</h1>
+      <p class="mt-2 text-sm text-muted-foreground">{{ loadError }}</p>
+      <div class="mt-6 flex items-center justify-center gap-3">
+        <UiButton variant="brand" size="sm" @click="loadAttraction(attractionId)">
+          <RefreshCw class="size-4" />
+          Retry
+        </UiButton>
+        <NuxtLink to="/explore">
+          <UiButton variant="outline" size="sm">Back to Explore</UiButton>
+        </NuxtLink>
+      </div>
+    </main>
+
+    <main v-else-if="attraction" class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <!-- Breadcrumb & Actions -->
       <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <NuxtLink

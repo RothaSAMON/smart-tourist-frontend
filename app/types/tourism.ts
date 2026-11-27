@@ -1,4 +1,11 @@
-export type DestinationCategory = 'All' | 'Temple' | 'Island' | 'Nature' | 'Culture' | 'Nightlife'
+export type DestinationCategory =
+  | 'All'
+  | 'Temple'
+  | 'Island'
+  | 'Nature'
+  | 'Culture'
+  | 'Nightlife'
+  | (string & {})
 
 export type VibeTag =
   | 'Family Friendly'
@@ -53,7 +60,8 @@ export interface DestinationAttraction {
   name: string
   province: string
   location: string
-  category: Exclude<DestinationCategory, 'All'>
+  address?: string
+  category: string
   tags: VibeTag[]
   duration: string
   bestTime: string

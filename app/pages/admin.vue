@@ -1,17 +1,30 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
+  AlertCircle,
   BarChart3,
   Building2,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Flag,
   Landmark,
+  Loader2,
   MapPin,
+  Pencil,
+  Plus,
+  RefreshCw,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Users,
 } from '@lucide/vue'
 import { CAMBODIA_PROVINCES, DESTINATION_CATEGORIES } from '@/data/home'
+import type {
+  ApiAttraction,
+  ApiPaginationMeta,
+  AttractionMutationPayload,
+} from '@/types/attraction-api'
 import type { AdminBusinessRecord } from '@/types/tourism'
 
 useHead({
@@ -19,9 +32,160 @@ useHead({
 })
 
 const store = useTourismStore()
+const {
+  fetchAttractions,
+  createAttraction,
+  updateAttraction,
+  deleteAttraction,
+} = useAttractionsApi()
+
 const activeTab = ref<
   'attractions' | 'businesses' | 'taxonomy' | 'reports' | 'recommendations'
 >('attractions')
+
+// Live Attractions CRUD State
+const apiAttractions = ref<ApiAttraction[]>([])
+const paginationMeta = ref<ApiPaginationMeta | null>(null)
+const currentPage = ref(1)
+const isLoadingAttractions = ref(true)
+const attractionsError = ref('')
+
+const formSheetOpen = ref(false)
+const editingAttraction = ref<ApiAttraction | null>(null)
+const isSavingAttraction = ref(false)
+const formError = ref('')
+
+const deletingTarget = ref<ApiAttraction | null>(null)
+const deleteDialogOpen = ref(false)
+const isDeletingAttraction = ref(false)
+const actionBanner = ref('')
+
+const provinceSelectOptions = computed(() => {
+  const map = new Map<string, string>([
+    ['1', 'Siem Reap'],
+    ['2', 'Phnom Penh'],
+    ['3', 'Preah Sihanouk'],
+    ['4', 'Kampot'],
+    ['5', 'Kep'],
+    ['6', 'Battambang'],
+  ])
+  const list = Array.isArray(apiAttractions.value) ? apiAttractions.value : []
+  for (const item of list) {
+    if (item.province?.id && item.province?.name) {
+      map.set(String(item.province.id), item.province.name)
+    }
+  }
+  return Array.from(map.entries()).map(([value, label]) => ({ value, label }))
+})
+
+const categorySelectOptions = computed(() => {
+  const map = new Map<string, string>([
+    ['1', 'Historical & Temples'],
+    ['2', 'Nature & Parks'],
+    ['3', 'Islands & Beaches'],
+    ['4', 'Culture & Museums'],
+    ['5', 'Food & Nightlife'],
+  ])
+  const list = Array.isArray(apiAttractions.value) ? apiAttractions.value : []
+  for (const item of list) {
+    if (item.category?.id && item.category?.name) {
+      map.set(String(item.category.id), item.category.name)
+    }
+  }
+  return Array.from(map.entries()).map(([value, label]) => ({ value, label }))
+})
+
+async function loadAttractions(page = currentPage.value) {
+  isLoadingAttractions.value = true
+  attractionsError.value = ''
+  try {
+    const res = await fetchAttractions(page)
+    apiAttractions.value = Array.isArray(res?.raw) ? res.raw : []
+    paginationMeta.value = res?.meta ?? null
+    currentPage.value = res?.meta?.current_page ?? page
+  } catch (err) {
+    const fetchErr = err as { data?: { message?: string }; message?: string }
+    attractionsError.value =
+      fetchErr?.data?.message ||
+      fetchErr?.message ||
+      'Unable to fetch attractions from API.'
+  } finally {
+    isLoadingAttractions.value = false
+  }
+}
+
+onMounted(() => {
+  loadAttractions(1)
+})
+
+function openCreateForm() {
+  editingAttraction.value = null
+  formError.value = ''
+  formSheetOpen.value = true
+}
+
+function openEditForm(item: ApiAttraction) {
+  editingAttraction.value = item
+  formError.value = ''
+  formSheetOpen.value = true
+}
+
+function openDeleteDialog(item: ApiAttraction) {
+  deletingTarget.value = item
+  deleteDialogOpen.value = true
+}
+
+async function handleSaveAttraction(payload: AttractionMutationPayload) {
+  if (isSavingAttraction.value) return
+  isSavingAttraction.value = true
+  formError.value = ''
+  try {
+    if (editingAttraction.value) {
+      await updateAttraction(editingAttraction.value.id, payload)
+      actionBanner.value = `Updated "${payload.name}" successfully.`
+    } else {
+      await createAttraction(payload)
+      actionBanner.value = `Created "${payload.name}" successfully.`
+    }
+    formSheetOpen.value = false
+    await loadAttractions(currentPage.value)
+    setTimeout(() => {
+      actionBanner.value = ''
+    }, 3500)
+  } catch (err) {
+    const fetchErr = err as { data?: { message?: string }; message?: string }
+    formError.value =
+      fetchErr?.data?.message ||
+      fetchErr?.message ||
+      'Failed to save attraction.'
+  } finally {
+    isSavingAttraction.value = false
+  }
+}
+
+async function handleConfirmDelete() {
+  if (!deletingTarget.value || isDeletingAttraction.value) return
+  isDeletingAttraction.value = true
+  try {
+    const targetName = deletingTarget.value.name
+    await deleteAttraction(deletingTarget.value.id)
+    deleteDialogOpen.value = false
+    deletingTarget.value = null
+    actionBanner.value = `Deleted "${targetName}" successfully.`
+    await loadAttractions(currentPage.value)
+    setTimeout(() => {
+      actionBanner.value = ''
+    }, 3500)
+  } catch (err) {
+    const fetchErr = err as { data?: { message?: string }; message?: string }
+    attractionsError.value =
+      fetchErr?.data?.message ||
+      fetchErr?.message ||
+      'Failed to delete attraction.'
+  } finally {
+    isDeletingAttraction.value = false
+  }
+}
 
 const ratingWeight = ref([85])
 const budgetWeight = ref([90])
@@ -85,10 +249,12 @@ function saveWeights() {
           <UiCardContent class="flex items-center justify-between">
             <div>
               <p class="text-xs font-medium text-muted-foreground">Total Attractions</p>
-              <p class="mt-1 text-2xl font-bold">{{ store.attractions.value.length }}</p>
-              <p class="text-xs text-muted-foreground">Across {{ CAMBODIA_PROVINCES.length }} provinces</p>
+              <p class="mt-1 text-2xl font-bold">
+                {{ paginationMeta?.total ?? apiAttractions.length }}
+              </p>
+              <p class="text-xs text-muted-foreground">Live from /attractions API</p>
             </div>
-            <Landmark class="size-8 text-neutral-700" />
+            <Landmark class="size-8 text-neutral-700 dark:text-neutral-300" />
           </UiCardContent>
         </UiCard>
 
@@ -132,7 +298,7 @@ function saveWeights() {
       <UiTabs v-model="activeTab" class="mt-8">
         <UiTabsList>
           <UiTabsTrigger value="attractions">
-            Attractions ({{ store.attractions.value.length }})
+            Attractions ({{ paginationMeta?.total ?? apiAttractions.length }})
           </UiTabsTrigger>
           <UiTabsTrigger value="businesses">
             Businesses &amp; Users
@@ -149,44 +315,225 @@ function saveWeights() {
           </UiTabsTrigger>
         </UiTabsList>
 
-        <!-- Tab 1: Attractions -->
+        <!-- Tab 1: Attractions (Live CRUD) -->
         <UiTabsContent value="attractions">
           <UiCard>
             <UiCardHeader>
-              <UiCardTitle>Cambodia Attractions Directory</UiCardTitle>
-              <UiCardDescription>
-                Review published attractions, ticket prices, and ratings
-              </UiCardDescription>
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <UiCardTitle>Cambodia Attractions Directory</UiCardTitle>
+                  <UiCardDescription>
+                    Create, update, or delete attractions directly via /attractions API
+                  </UiCardDescription>
+                </div>
+                <div class="flex items-center gap-2">
+                  <UiButton
+                    variant="outline"
+                    size="sm"
+                    :disabled="isLoadingAttractions"
+                    @click="loadAttractions(currentPage)"
+                  >
+                    <RefreshCw
+                      class="size-3.5"
+                      :class="isLoadingAttractions ? 'animate-spin' : ''"
+                    />
+                    Refresh
+                  </UiButton>
+                  <UiButton
+                    variant="brand"
+                    size="sm"
+                    class="font-semibold"
+                    @click="openCreateForm"
+                  >
+                    <Plus class="size-4" />
+                    Add Attraction
+                  </UiButton>
+                </div>
+              </div>
             </UiCardHeader>
+
             <UiCardContent class="space-y-3">
               <div
-                v-for="item in store.attractions.value"
-                :key="item.id"
-                class="flex flex-col justify-between gap-3 rounded-2xl border border-border/80 p-3.5 sm:flex-row sm:items-center"
+                v-if="actionBanner"
+                class="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-semibold text-emerald-800"
               >
-                <div class="flex items-center gap-3.5">
-                  <img
-                    :src="item.imageUrl"
-                    :alt="item.name"
-                    class="size-14 rounded-xl object-cover"
-                  />
-                  <div>
-                    <p class="text-sm font-semibold">{{ item.name }}</p>
-                    <p class="text-xs text-muted-foreground">
-                      {{ item.province }} · {{ item.category }} · {{ item.entryFee }}
-                    </p>
+                <CheckCircle2 class="size-4 shrink-0" />
+                <span>{{ actionBanner }}</span>
+              </div>
+
+              <div
+                v-if="attractionsError"
+                class="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-xs font-medium text-destructive"
+              >
+                <span class="inline-flex items-center gap-2">
+                  <AlertCircle class="size-4 shrink-0" />
+                  {{ attractionsError }}
+                </span>
+                <UiButton
+                  variant="outline"
+                  size="sm"
+                  @click="loadAttractions(currentPage)"
+                >
+                  Retry
+                </UiButton>
+              </div>
+
+              <div v-else-if="isLoadingAttractions" class="space-y-3">
+                <div
+                  v-for="n in 4"
+                  :key="n"
+                  class="h-20 animate-pulse rounded-2xl bg-muted"
+                />
+              </div>
+
+              <template v-else-if="apiAttractions.length > 0">
+                <div
+                  v-for="item in apiAttractions"
+                  :key="item.id"
+                  class="flex flex-col justify-between gap-3 rounded-2xl border border-border/80 p-3.5 sm:flex-row sm:items-center"
+                >
+                  <div class="flex items-center gap-3.5">
+                    <img
+                      :src="
+                        item.image_url ||
+                        item.image ||
+                        '/images/attraction-placeholder.svg'
+                      "
+                      :alt="item.name"
+                      class="size-14 shrink-0 rounded-xl object-cover"
+                    />
+                    <div class="min-w-0">
+                      <p class="truncate text-sm font-semibold">
+                        {{ item.name }}
+                      </p>
+                      <p class="text-xs text-muted-foreground">
+                        {{ item.province?.name || `Province #${item.province_id}` }} ·
+                        {{ item.category?.name || `Category #${item.category_id}` }} ·
+                        {{
+                          item.entrance_fee && item.entrance_fee > 0
+                            ? `$${item.entrance_fee}`
+                            : 'Free Entry'
+                        }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-2">
+                    <UiBadge variant="secondary">
+                      ★ {{ Number(item.average_rating ?? 0).toFixed(1) }}
+                    </UiBadge>
+                    <NuxtLink :to="`/attractions/${item.id}`">
+                      <UiButton variant="outline" size="sm">View</UiButton>
+                    </NuxtLink>
+                    <UiButton
+                      variant="outline"
+                      size="sm"
+                      @click="openEditForm(item)"
+                    >
+                      <Pencil class="size-3.5" />
+                      Edit
+                    </UiButton>
+                    <UiButton
+                      variant="outline"
+                      size="sm"
+                      class="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      @click="openDeleteDialog(item)"
+                    >
+                      <Trash2 class="size-3.5" />
+                      Delete
+                    </UiButton>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-2.5">
-                  <UiBadge variant="secondary">★ {{ item.rating.toFixed(1) }}</UiBadge>
-                  <NuxtLink :to="`/attractions/${item.id}`">
-                    <UiButton variant="outline" size="sm">Inspect</UiButton>
-                  </NuxtLink>
+                <!-- Pagination -->
+                <div
+                  v-if="paginationMeta && paginationMeta.last_page > 1"
+                  class="flex items-center justify-between border-t border-border/60 pt-4"
+                >
+                  <p class="text-xs text-muted-foreground">
+                    Page {{ paginationMeta.current_page }} of {{ paginationMeta.last_page }}
+                    ({{ paginationMeta.total }} total)
+                  </p>
+                  <div class="flex items-center gap-2">
+                    <UiButton
+                      variant="outline"
+                      size="sm"
+                      :disabled="currentPage <= 1"
+                      @click="loadAttractions(currentPage - 1)"
+                    >
+                      <ChevronLeft class="size-4" />
+                      Previous
+                    </UiButton>
+                    <UiButton
+                      variant="outline"
+                      size="sm"
+                      :disabled="currentPage >= paginationMeta.last_page"
+                      @click="loadAttractions(currentPage + 1)"
+                    >
+                      Next
+                      <ChevronRight class="size-4" />
+                    </UiButton>
+                  </div>
                 </div>
+              </template>
+
+              <div
+                v-else
+                class="rounded-2xl border border-dashed border-border py-12 text-center"
+              >
+                <p class="text-sm font-semibold">No attractions found</p>
+                <UiButton
+                  variant="brand"
+                  size="sm"
+                  class="mt-3"
+                  @click="openCreateForm"
+                >
+                  <Plus class="size-4" />
+                  Create First Attraction
+                </UiButton>
               </div>
             </UiCardContent>
           </UiCard>
+
+          <!-- Create / Edit Attraction Sheet -->
+          <AdminAttractionFormSheet
+            v-model:open="formSheetOpen"
+            :editing-attraction="editingAttraction"
+            :province-options="provinceSelectOptions"
+            :category-options="categorySelectOptions"
+            :is-submitting="isSavingAttraction"
+            :error-message="formError"
+            @submit="handleSaveAttraction"
+          />
+
+          <!-- Delete Confirmation Modal -->
+          <UiAlertDialog v-model:open="deleteDialogOpen">
+            <UiAlertDialogContent>
+              <UiAlertDialogHeader>
+                <UiAlertDialogTitle>Delete attraction?</UiAlertDialogTitle>
+                <UiAlertDialogDescription>
+                  This will permanently delete
+                  <span class="font-semibold text-foreground">
+                    {{ deletingTarget?.name }}
+                  </span>. This action cannot be undone.
+                </UiAlertDialogDescription>
+              </UiAlertDialogHeader>
+              <UiAlertDialogFooter>
+                <UiAlertDialogCancel :disabled="isDeletingAttraction">
+                  Cancel
+                </UiAlertDialogCancel>
+                <UiButton
+                  variant="default"
+                  class="bg-destructive text-white hover:bg-destructive/90"
+                  :disabled="isDeletingAttraction"
+                  @click="handleConfirmDelete"
+                >
+                  <Loader2 v-if="isDeletingAttraction" class="size-4 animate-spin" />
+                  {{ isDeletingAttraction ? 'Deleting...' : 'Delete' }}
+                </UiButton>
+              </UiAlertDialogFooter>
+            </UiAlertDialogContent>
+          </UiAlertDialog>
         </UiTabsContent>
 
         <!-- Tab 2: Businesses -->

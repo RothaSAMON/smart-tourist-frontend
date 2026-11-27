@@ -1,19 +1,20 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
   LayoutGrid,
   Map as MapIcon,
+  RefreshCw,
   RotateCcw,
   Search,
   SlidersHorizontal,
   Sparkles,
 } from '@lucide/vue'
-import {
-  CAMBODIA_PROVINCES,
-  DESTINATION_CATEGORIES,
-  VIBE_TAGS,
-} from '@/data/home'
-import type { DestinationCategory, VibeTag } from '@/types/tourism'
+import { VIBE_TAGS } from '@/data/home'
+import type { ApiPaginationMeta } from '@/types/attraction-api'
+import type { DestinationAttraction, VibeTag } from '@/types/tourism'
 
 useHead({
   title: 'Explore Cambodia Attractions — RokMerl',
@@ -21,22 +22,41 @@ useHead({
 
 const route = useRoute()
 const store = useTourismStore()
+const { fetchAttractions } = useAttractionsApi()
+
+const attractions = ref<DestinationAttraction[]>([])
+const paginationMeta = ref<ApiPaginationMeta | null>(null)
+const currentPage = ref(Number(route.query.page ?? 1) || 1)
+const isLoading = ref(true)
+const errorMessage = ref('')
 
 const searchQuery = ref(String(route.query.q ?? ''))
 const selectedProvince = ref(String(route.query.province || 'all'))
-const selectedCategory = ref<DestinationCategory>('All')
+const selectedCategory = ref<string>('All')
 const selectedTags = ref<VibeTag[]>([])
 const budgetFilter = ref<'any' | 'free' | 'under15' | 'under40'>('any')
 const minRating = ref<string>('0')
-const maxDistanceKm = ref<string>('0')
-const sortBy = ref<'popularity' | 'rating' | 'price' | 'distance'>('popularity')
+const sortBy = ref<'popularity' | 'rating' | 'price'>('popularity')
 const viewMode = ref<'grid' | 'map'>('grid')
-const selectedMapId = ref<string>('angkor-wat')
+const selectedMapId = ref<string>('')
 
-const provinceOptions = [
-  { label: 'All Provinces', value: 'all' },
-  ...CAMBODIA_PROVINCES.map((p) => ({ label: p, value: p })),
-]
+const provinceOptions = computed(() => {
+  const unique = Array.from(
+    new Set(attractions.value.map((a) => a.province)),
+  ).sort()
+  return [
+    { label: 'All Provinces', value: 'all' },
+    ...unique.map((p) => ({ label: p, value: p })),
+  ]
+})
+
+const categoryList = computed(() => {
+  const unique = Array.from(
+    new Set(attractions.value.map((a) => a.category)),
+  ).sort()
+  return ['All', ...unique]
+})
+
 const budgetOptions = [
   { label: 'Any Budget', value: 'any' },
   { label: 'Free Entry', value: 'free' },
@@ -45,21 +65,56 @@ const budgetOptions = [
 ]
 const ratingOptions = [
   { label: 'Any Rating', value: '0' },
-  { label: '4.6+ Stars', value: '4.6' },
+  { label: '4.5+ Stars', value: '4.5' },
   { label: '4.8+ Stars', value: '4.8' },
-]
-const distanceOptions = [
-  { label: 'Any Distance', value: '0' },
-  { label: 'Within 10 km', value: '10' },
-  { label: 'Within 30 km', value: '30' },
-  { label: 'Within 50 km', value: '50' },
 ]
 const sortOptions = [
   { label: 'Sort: Most Popular', value: 'popularity' },
   { label: 'Sort: Highest Rated', value: 'rating' },
   { label: 'Sort: Lowest Ticket Price', value: 'price' },
-  { label: 'Sort: Nearest', value: 'distance' },
 ]
+
+async function loadAttractions(page = currentPage.value) {
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    const result = await fetchAttractions(page)
+    attractions.value = result.items
+    paginationMeta.value = result.meta
+    currentPage.value = result.meta?.current_page ?? page
+    if (result.items.length > 0 && !selectedMapId.value) {
+      selectedMapId.value = result.items[0]!.id
+    }
+  } catch (err) {
+    const fetchErr = err as { data?: { message?: string }; message?: string }
+    errorMessage.value =
+      fetchErr?.data?.message ||
+      fetchErr?.message ||
+      'Unable to load attractions from the server.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadAttractions(currentPage.value)
+})
+
+function goToPage(page: number) {
+  if (
+    !paginationMeta.value ||
+    page < 1 ||
+    page > paginationMeta.value.last_page ||
+    page === currentPage.value
+  ) {
+    return
+  }
+  loadAttractions(page)
+  if (import.meta.client) {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
 
 function toggleTag(tag: VibeTag) {
   if (selectedTags.value.includes(tag)) {
@@ -76,21 +131,19 @@ function resetAll() {
   selectedTags.value = []
   budgetFilter.value = 'any'
   minRating.value = '0'
-  maxDistanceKm.value = '0'
   sortBy.value = 'popularity'
 }
 
 const filteredAttractions = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
   const minRatingNum = Number(minRating.value)
-  const maxDistanceNum = Number(maxDistanceKm.value)
 
-  const list = store.attractions.value.filter((item) => {
+  const list = attractions.value.filter((item) => {
     const matchesQuery =
       !q ||
       item.name.toLowerCase().includes(q) ||
       item.province.toLowerCase().includes(q) ||
-      item.highlight.toLowerCase().includes(q) ||
+      item.category.toLowerCase().includes(q) ||
       item.description.toLowerCase().includes(q)
 
     const matchesProvince =
@@ -110,8 +163,6 @@ const filteredAttractions = computed(() => {
       (budgetFilter.value === 'under40' && item.ticketPriceUsd <= 40)
 
     const matchesRating = item.rating >= minRatingNum
-    const matchesDistance =
-      maxDistanceNum === 0 || item.distanceFromCenterKm <= maxDistanceNum
 
     return (
       matchesQuery &&
@@ -119,19 +170,26 @@ const filteredAttractions = computed(() => {
       matchesCategory &&
       matchesTags &&
       matchesBudget &&
-      matchesRating &&
-      matchesDistance
+      matchesRating
     )
   })
 
   return [...list].sort((a, b) => {
     if (sortBy.value === 'rating') return b.rating - a.rating
     if (sortBy.value === 'price') return a.ticketPriceUsd - b.ticketPriceUsd
-    if (sortBy.value === 'distance') {
-      return a.distanceFromCenterKm - b.distanceFromCenterKm
-    }
     return b.popularityScore - a.popularityScore
   })
+})
+
+watch(filteredAttractions, (list) => {
+  if (list.length > 0 && !list.some((item) => item.id === selectedMapId.value)) {
+    selectedMapId.value = list[0]!.id
+  }
+})
+
+const pageNumbers = computed(() => {
+  const last = paginationMeta.value?.last_page ?? 1
+  return Array.from({ length: last }, (_, idx) => idx + 1)
 })
 </script>
 
@@ -152,7 +210,7 @@ const filteredAttractions = computed(() => {
             Explore Attractions Across Cambodia
           </h1>
           <p class="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
-            Filter by province, category, travel vibe, budget, rating, and distance — or switch to Interactive Map mode.
+            Filter live attractions by province, category, travel vibe, budget, and rating — or switch to Interactive Map mode.
           </p>
         </div>
 
@@ -197,7 +255,7 @@ const filteredAttractions = computed(() => {
       <!-- Filter Controls -->
       <UiCard class="mt-6">
         <UiCardContent class="space-y-4">
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <!-- Search -->
             <div class="relative lg:col-span-2">
               <Search class="pointer-events-none absolute top-3 left-3.5 size-4 text-muted-foreground" />
@@ -234,22 +292,13 @@ const filteredAttractions = computed(() => {
               search-placeholder="Search rating..."
               aria-label="Filter by minimum rating"
             />
-
-            <!-- Max Distance -->
-            <CommonSearchableSelect
-              v-model="maxDistanceKm"
-              :options="distanceOptions"
-              placeholder="Any Distance"
-              search-placeholder="Search distance..."
-              aria-label="Filter by distance"
-            />
           </div>
 
           <!-- Category Pills & Sort -->
           <div class="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
             <div class="flex flex-wrap items-center gap-2">
               <UiButton
-                v-for="cat in DESTINATION_CATEGORIES"
+                v-for="cat in categoryList"
                 :key="cat"
                 size="sm"
                 :variant="selectedCategory === cat ? 'brand' : 'outline'"
@@ -289,7 +338,7 @@ const filteredAttractions = computed(() => {
               class="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
               :class="
                 selectedTags.includes(tag)
-                  ? 'border-neutral-900 bg-neutral-900 text-white'
+                  ? 'border-primary bg-primary text-primary-foreground'
                   : 'border-border bg-muted/40 text-foreground hover:bg-muted'
               "
               @click="toggleTag(tag)"
@@ -301,16 +350,53 @@ const filteredAttractions = computed(() => {
       </UiCard>
 
       <!-- Results Count -->
-      <div class="mt-6 flex items-center justify-between">
+      <div class="mt-6 flex flex-wrap items-center justify-between gap-2">
         <p class="text-sm text-muted-foreground">
-          Showing <span class="font-semibold text-foreground">{{ filteredAttractions.length }}</span>
-          attractions in Cambodia
+          Showing
+          <span class="font-semibold text-foreground">{{ filteredAttractions.length }}</span>
+          attractions
+          <span v-if="paginationMeta">
+            (Page {{ paginationMeta.current_page }} of {{ paginationMeta.last_page }} ·
+            {{ paginationMeta.total }} total)
+          </span>
         </p>
+      </div>
+
+      <!-- Error State -->
+      <div
+        v-if="errorMessage"
+        class="mt-6 flex flex-col items-center justify-center rounded-2xl border border-destructive/30 bg-destructive/10 px-6 py-10 text-center"
+      >
+        <AlertCircle class="size-8 text-destructive" />
+        <p class="mt-3 text-sm font-semibold text-destructive">
+          {{ errorMessage }}
+        </p>
+        <div class="mt-4 flex flex-wrap items-center gap-2.5">
+          <UiButton variant="brand" size="sm" @click="loadAttractions(currentPage)">
+            <RefreshCw class="size-3.5" />
+            Try Again
+          </UiButton>
+          <NuxtLink to="/auth/login">
+            <UiButton variant="outline" size="sm">Log in</UiButton>
+          </NuxtLink>
+        </div>
+      </div>
+
+      <!-- Loading Skeleton -->
+      <div
+        v-else-if="isLoading"
+        class="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        <div
+          v-for="n in 6"
+          :key="n"
+          class="h-[340px] animate-pulse rounded-2xl bg-muted"
+        />
       </div>
 
       <!-- Content Area -->
       <div
-        v-if="filteredAttractions.length > 0"
+        v-else-if="filteredAttractions.length > 0"
         class="mt-5"
         :class="
           viewMode === 'map'
@@ -358,12 +444,50 @@ const filteredAttractions = computed(() => {
       >
         <p class="text-base font-semibold">No attractions match these filters</p>
         <p class="mt-1 text-sm text-muted-foreground">
-          Try widening your budget, distance, or vibe tags.
+          Try widening your budget, rating, or vibe tags.
         </p>
         <UiButton variant="brand" size="sm" class="mt-4" @click="resetAll">
           Reset All Filters
         </UiButton>
       </div>
+
+      <!-- Pagination Controls -->
+      <nav
+        v-if="!isLoading && !errorMessage && paginationMeta && paginationMeta.last_page > 1"
+        aria-label="Attractions pagination"
+        class="mt-10 flex items-center justify-center gap-2"
+      >
+        <UiButton
+          variant="outline"
+          size="sm"
+          :disabled="currentPage <= 1"
+          @click="goToPage(currentPage - 1)"
+        >
+          <ChevronLeft class="size-4" />
+          Previous
+        </UiButton>
+
+        <UiButton
+          v-for="page in pageNumbers"
+          :key="page"
+          size="sm"
+          :variant="page === currentPage ? 'brand' : 'outline'"
+          class="min-w-9 px-3 font-semibold"
+          @click="goToPage(page)"
+        >
+          {{ page }}
+        </UiButton>
+
+        <UiButton
+          variant="outline"
+          size="sm"
+          :disabled="currentPage >= paginationMeta.last_page"
+          @click="goToPage(currentPage + 1)"
+        >
+          Next
+          <ChevronRight class="size-4" />
+        </UiButton>
+      </nav>
     </main>
 
     <LayoutAppFooter />
