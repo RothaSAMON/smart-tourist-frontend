@@ -1,24 +1,26 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { DESTINATION_CATEGORIES } from '@/data/home'
-import type {
-  DestinationAttraction,
-  DestinationCategory,
-  SearchFilters,
-} from '@/types/tourism'
+import { AlertCircle, RefreshCw } from '@lucide/vue'
+import type { DestinationAttraction, SearchFilters } from '@/types/tourism'
 
 const props = defineProps<{
   attractions: DestinationAttraction[]
-  activeCategory: DestinationCategory
+  categories: string[]
+  activeCategory: string
   searchFilters: SearchFilters
+  isLoading: boolean
+  errorMessage: string
   isFavorite: (id: string) => boolean
 }>()
 
 const emit = defineEmits<{
-  selectCategory: [category: DestinationCategory]
+  selectCategory: [category: string]
   resetFilters: []
   toggleFavorite: [id: string]
+  retry: []
 }>()
+
+const visibleAttractions = computed(() => props.attractions.slice(0, 6))
 
 const activeSearchLabel = computed(() => {
   const parts: string[] = []
@@ -54,7 +56,7 @@ const activeSearchLabel = computed(() => {
         aria-label="Filter Cambodian attractions by category"
       >
         <UiButton
-          v-for="category in DESTINATION_CATEGORIES"
+          v-for="category in categories"
           :key="category"
           role="tab"
           :aria-selected="activeCategory === category"
@@ -69,7 +71,7 @@ const activeSearchLabel = computed(() => {
 
       <NuxtLink
         to="/explore"
-        class="text-sm font-semibold text-foreground transition-colors hover:text-neutral-600"
+        class="text-sm font-semibold text-foreground transition-colors hover:text-muted-foreground"
       >
         See All
       </NuxtLink>
@@ -93,13 +95,40 @@ const activeSearchLabel = computed(() => {
       </button>
     </div>
 
+    <!-- Error State -->
+    <div
+      v-if="errorMessage"
+      class="mt-7 flex flex-col items-center justify-center rounded-2xl border border-destructive/30 bg-destructive/10 px-6 py-10 text-center"
+    >
+      <AlertCircle class="size-7 text-destructive" />
+      <p class="mt-2.5 text-sm font-semibold text-destructive">
+        {{ errorMessage }}
+      </p>
+      <UiButton variant="brand" size="sm" class="mt-4" @click="emit('retry')">
+        <RefreshCw class="size-3.5" />
+        Retry
+      </UiButton>
+    </div>
+
+    <!-- Loading Skeleton -->
+    <div
+      v-else-if="isLoading"
+      class="mt-7 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+    >
+      <div
+        v-for="n in 6"
+        :key="n"
+        class="h-[340px] animate-pulse rounded-2xl bg-muted"
+      />
+    </div>
+
     <!-- Card Grid -->
     <div
-      v-if="attractions.length > 0"
+      v-else-if="visibleAttractions.length > 0"
       class="mt-7 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
     >
       <HomeDestinationCard
-        v-for="attraction in attractions"
+        v-for="attraction in visibleAttractions"
         :key="attraction.id"
         :attraction="attraction"
         :is-favorite="isFavorite(attraction.id)"
@@ -116,7 +145,7 @@ const activeSearchLabel = computed(() => {
         No matching attractions found in Cambodia
       </p>
       <p class="mt-1 text-sm text-muted-foreground">
-        Try another attraction name like "Angkor Wat" or reset to all provinces.
+        Try another attraction name or reset to all provinces.
       </p>
       <UiButton variant="brand" size="sm" class="mt-5" @click="emit('resetFilters')">
         Reset Filters

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import type { SearchFilters } from '@/types/tourism'
 
 useHead({
@@ -13,16 +14,30 @@ useHead({
 })
 
 const {
+  businesses,
+  isLoadingAttractions,
+  isLoadingBusinesses,
+  attractionsError,
+  businessesError,
   provinces,
+  categories,
   activeCategory,
   searchFilters,
   filteredAttractions,
+  topRatedAttractions,
+  loadHomeData,
+  loadAttractions,
+  loadBusinesses,
   setCategory,
   applySearch,
   resetFilters,
   isFavorite,
   toggleFavorite,
 } = useTourismRecommendations()
+
+onMounted(() => {
+  loadHomeData()
+})
 
 function handleHeroSearch(filters: SearchFilters) {
   applySearch(filters)
@@ -44,24 +59,41 @@ function handleHeroSearch(filters: SearchFilters) {
         @search="handleHeroSearch"
       />
 
-      <!-- 2. Recommended Attractions Grid -->
+      <!-- 2. Live Recommended Attractions Grid (/attractions) -->
       <HomeRecommendations
         :attractions="filteredAttractions"
+        :categories="categories"
         :active-category="activeCategory"
         :search-filters="searchFilters"
+        :is-loading="isLoadingAttractions"
+        :error-message="attractionsError"
         :is-favorite="isFavorite"
         @select-category="setCategory"
         @reset-filters="resetFilters"
         @toggle-favorite="toggleFavorite"
+        @retry="loadAttractions"
       />
 
-      <!-- 3. What Makes SmartTour Unique -->
+      <!-- 3. Live Local Businesses & Services (/businesses) -->
+      <HomeBusinesses
+        :businesses="businesses"
+        :is-loading="isLoadingBusinesses"
+        :error-message="businessesError"
+        @retry="loadBusinesses"
+      />
+
+      <!-- 4. What Makes RokMerl Unique -->
       <HomeFeatures />
 
-      <!-- 4. Award-Winning Spotlight Showcase -->
-      <HomeAwardShowcase />
+      <!-- 5. Top-Rated Live Spotlight Showcase -->
+      <HomeAwardShowcase
+        :attractions="topRatedAttractions"
+        :is-loading="isLoadingAttractions"
+        :is-favorite="isFavorite"
+        @toggle-favorite="toggleFavorite"
+      />
 
-      <!-- 5. Customer Testimonials -->
+      <!-- 6. Customer Testimonials -->
       <HomeTestimonials />
     </main>
 

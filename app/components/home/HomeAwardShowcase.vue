@@ -1,45 +1,57 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Check, Clock, Heart, Sparkles, Star, Sun } from '@lucide/vue'
-import { AWARD_SHOWCASE_ITEMS } from '@/data/home'
+import type { DestinationAttraction } from '@/types/tourism'
+
+const props = defineProps<{
+  attractions: DestinationAttraction[]
+  isLoading: boolean
+  isFavorite: (id: string) => boolean
+}>()
+
+const emit = defineEmits<{
+  toggleFavorite: [id: string]
+}>()
 
 const activeIndex = ref(0)
-const likedIds = ref<Set<string>>(new Set())
+
+watch(
+  () => props.attractions.length,
+  (len) => {
+    if (activeIndex.value >= len) {
+      activeIndex.value = 0
+    }
+  },
+)
 
 const activeItem = computed(() => {
-  return AWARD_SHOWCASE_ITEMS[activeIndex.value] ?? AWARD_SHOWCASE_ITEMS[0]!
+  return props.attractions[activeIndex.value] ?? props.attractions[0] ?? null
 })
-
-function isLiked(id: string) {
-  return likedIds.value.has(id)
-}
-
-function toggleLike(id: string) {
-  const next = new Set(likedIds.value)
-  if (next.has(id)) {
-    next.delete(id)
-  } else {
-    next.add(id)
-  }
-  likedIds.value = next
-}
 </script>
 
 <template>
   <section id="awards" class="py-6 sm:py-10">
+    <!-- Loading State -->
     <div
+      v-if="isLoading"
+      class="h-[440px] w-full animate-pulse rounded-3xl bg-muted"
+    />
+
+    <!-- Live Top-Rated Showcase -->
+    <div
+      v-else-if="activeItem"
       class="relative overflow-hidden rounded-3xl bg-slate-900 shadow-lg"
     >
       <!-- Dynamic Background Image -->
       <img
-        :src="activeItem.heroImageUrl"
+        :src="activeItem.imageUrl"
         :alt="`${activeItem.name} panoramic view in ${activeItem.location}`"
         loading="lazy"
         class="absolute inset-0 size-full object-cover transition-all duration-500"
       />
       <!-- Scrim -->
       <div
-        class="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-900/45 to-slate-900/25"
+        class="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/50 to-slate-900/30"
       />
 
       <!-- Content Grid -->
@@ -55,7 +67,7 @@ function toggleLike(id: string) {
               Globally Acclaimed Heritage &amp; Award-Winning Destinations in Cambodia.
             </h2>
             <p class="mt-4 max-w-sm text-sm leading-relaxed text-white/80">
-              RokMerl spotlights Cambodia's most celebrated landmarks, UNESCO treasures, and natural escapes.
+              RokMerl spotlights Cambodia's highest-rated landmarks, UNESCO treasures, and natural escapes.
             </p>
           </div>
 
@@ -66,7 +78,7 @@ function toggleLike(id: string) {
             aria-label="Select featured Cambodian attraction"
           >
             <button
-              v-for="(item, index) in AWARD_SHOWCASE_ITEMS"
+              v-for="(item, index) in attractions"
               :key="item.id"
               type="button"
               role="tab"
@@ -81,7 +93,7 @@ function toggleLike(id: string) {
               @click="activeIndex = index"
             >
               <img
-                :src="item.thumbnailUrl"
+                :src="item.imageUrl"
                 :alt="item.name"
                 loading="lazy"
                 class="size-full rounded-full object-cover"
@@ -105,7 +117,7 @@ function toggleLike(id: string) {
               <!-- Card Thumbnail -->
               <div class="h-44 w-full shrink-0 overflow-hidden rounded-xl sm:h-auto sm:w-36">
                 <img
-                  :src="activeItem.thumbnailUrl"
+                  :src="activeItem.imageUrl"
                   :alt="activeItem.name"
                   class="size-full object-cover"
                 />
@@ -117,18 +129,18 @@ function toggleLike(id: string) {
                   <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0">
                       <h3 class="text-sm font-bold leading-snug text-foreground sm:text-base">
-                        {{ activeItem.name }} - {{ activeItem.location }}
+                        {{ activeItem.name }} - {{ activeItem.province }}
                       </h3>
                     </div>
                     <button
                       type="button"
-                      class="shrink-0 rounded-full p-1 text-neutral-500 transition-colors hover:bg-neutral-100"
+                      class="shrink-0 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted"
                       :aria-label="`Favorite ${activeItem.name}`"
-                      @click="toggleLike(activeItem.id)"
+                      @click="emit('toggleFavorite', activeItem.id)"
                     >
                       <Heart
                         class="size-4"
-                        :class="isLiked(activeItem.id) ? 'fill-rose-500 text-rose-500' : ''"
+                        :class="isFavorite(activeItem.id) ? 'fill-rose-500 text-rose-500' : ''"
                       />
                     </button>
                   </div>
@@ -139,7 +151,7 @@ function toggleLike(id: string) {
                   >
                     <span class="inline-flex items-center gap-1">
                       <Clock class="size-3" />
-                      {{ activeItem.duration }}
+                      {{ activeItem.openingHours }}
                     </span>
                     <span class="inline-flex items-center gap-1">
                       <Sun class="size-3" />
@@ -147,7 +159,7 @@ function toggleLike(id: string) {
                     </span>
                     <span class="inline-flex items-center gap-1">
                       <Sparkles class="size-3" />
-                      {{ activeItem.highlight }}
+                      {{ activeItem.category }}
                     </span>
                   </div>
                 </div>
@@ -164,7 +176,7 @@ function toggleLike(id: string) {
                     </span>
                   </div>
 
-                  <NuxtLink :to="`/attractions/${activeItem.attractionId}`" class="mt-3 block">
+                  <NuxtLink :to="`/attractions/${activeItem.id}`" class="mt-3 block">
                     <UiButton
                       variant="brand"
                       size="sm"

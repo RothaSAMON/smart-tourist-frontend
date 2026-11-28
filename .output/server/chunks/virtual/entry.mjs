@@ -1126,53 +1126,53 @@ var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default = [
 		name: "auth-login",
 		path: "/auth/login",
 		alias: ["/login"],
-		component: () => import('../build/login-BpojgFBr.mjs')
+		component: () => import('../build/login-DJQXR7m5.mjs')
 	},
 	{
 		name: "auth-register",
 		path: "/auth/register",
 		alias: ["/register"],
-		component: () => import('../build/register-Bj2DqwzD.mjs')
+		component: () => import('../build/register-D2UpQVcv.mjs')
 	},
 	{
 		name: "attractions-id",
 		path: "/attractions/:id()",
-		component: () => import('../build/_id_-D8AnA3BD.mjs')
+		component: () => import('../build/_id_-BsCvHnbM.mjs')
 	},
 	{
 		name: "businesses-id",
 		path: "/businesses/:id()",
-		component: () => import('../build/_id_-DXXuApGW.mjs')
+		component: () => import('../build/_id_-BqXSMA_p.mjs')
 	},
 	{
 		name: "admin",
 		path: "/admin",
-		component: () => import('../build/admin-kVaY2VcG.mjs')
+		component: () => import('../build/admin-CjN3BSb8.mjs')
 	},
 	{
 		name: "business",
 		path: "/business",
-		component: () => import('../build/business-CrX5KU9e.mjs')
+		component: () => import('../build/business-oOJJdA8f.mjs')
 	},
 	{
 		name: "explore",
 		path: "/explore",
-		component: () => import('../build/explore-BAZ7gyOV.mjs')
+		component: () => import('../build/explore-BiSewv9Z.mjs')
 	},
 	{
 		name: "planner",
 		path: "/planner",
-		component: () => import('../build/planner-BSWSXWSA.mjs')
+		component: () => import('../build/planner-DfRIUZwQ.mjs')
 	},
 	{
 		name: "profile",
 		path: "/profile",
-		component: () => import('../build/profile-N4FUc9qY.mjs')
+		component: () => import('../build/profile-RIUb9iEa.mjs')
 	},
 	{
 		name: "index",
 		path: "/",
-		component: () => import('../build/pages-ZEVMCk42.mjs')
+		component: () => import('../build/pages-Ct8p_4s3.mjs')
 	}
 ];
 // node_modules/nuxt/dist/pages/runtime/plugins/router.js
